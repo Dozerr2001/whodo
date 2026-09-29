@@ -1,0 +1,200 @@
+[
+  {
+    "speaker": "Priya",
+    "start": 0.0,
+    "end": 8.3,
+    "text": "Okay, let's get started. Thanks for joining, everyone. Quick one today. We need to lock the plan for the referral program launch."
+  },
+  {
+    "speaker": "Rahul",
+    "start": 8.9,
+    "end": 13.8,
+    "text": "Sounds good. Before we start, are we still looking at November third for launch?"
+  },
+  {
+    "speaker": "Priya",
+    "start": 14.4,
+    "end": 18.68,
+    "text": "That's actually the first thing. Arjun, where are we on the backend?"
+  },
+  {
+    "speaker": "Arjun",
+    "start": 19.28,
+    "end": 31.75,
+    "text": "Honestly, November third is tight. The referral tracking works, but there's no fraud check yet. Right now someone could refer themselves with a second phone number and collect the reward."
+  },
+  {
+    "speaker": "Meera",
+    "start": 32.35,
+    "end": 35.27,
+    "text": "Yeah, that would get expensive fast."
+  },
+  {
+    "speaker": "Priya",
+    "start": 35.88,
+    "end": 38.15,
+    "text": "Okay. How much time do you need?"
+  },
+  {
+    "speaker": "Arjun",
+    "start": 38.75,
+    "end": 44.9,
+    "text": "If I can have the fraud check done by November fifth, we're safe for a launch on the tenth."
+  },
+  {
+    "speaker": "Priya",
+    "start": 45.5,
+    "end": 50.45,
+    "text": "Then let's move it. Launch is now November tenth. Everyone okay with that?"
+  },
+  {
+    "speaker": "Rahul",
+    "start": 51.05,
+    "end": 52.65,
+    "text": "Works for me."
+  },
+  {
+    "speaker": "Meera",
+    "start": 53.25,
+    "end": 54.6,
+    "text": "Same."
+  },
+  {
+    "speaker": "Priya",
+    "start": 55.2,
+    "end": 61.25,
+    "text": "Great. Arjun, the fraud check to block self-referrals is yours, done by November fifth."
+  },
+  {
+    "speaker": "Arjun",
+    "start": 61.85,
+    "end": 63.28,
+    "text": "Got it."
+  },
+  {
+    "speaker": "Priya",
+    "start": 63.88,
+    "end": 67.5,
+    "text": "Next, the reward. Rahul, you looked into options?"
+  },
+  {
+    "speaker": "Rahul",
+    "start": 68.1,
+    "end": 77.85,
+    "text": "Yes. Cash rewards are a legal headache. My suggestion is two hundred rupees in app credit for both people, the person who refers and the friend who joins."
+  },
+  {
+    "speaker": "Meera",
+    "start": 78.45,
+    "end": 81.1,
+    "text": "I like that it rewards both sides."
+  },
+  {
+    "speaker": "Priya",
+    "start": 81.7,
+    "end": 90.6,
+    "text": "Agreed. So that's decided, two hundred rupees in credit for both. Rahul, can you get the terms and conditions finalized with legal?"
+  },
+  {
+    "speaker": "Rahul",
+    "start": 91.2,
+    "end": 93.97,
+    "text": "Yes, I'll have that done by this Friday."
+  },
+  {
+    "speaker": "Priya",
+    "start": 94.57,
+    "end": 96.82,
+    "text": "Perfect. Meera, design?"
+  },
+  {
+    "speaker": "Meera",
+    "start": 97.42,
+    "end": 105.47,
+    "text": "I'll need to design the share screen, the one where users send their invite link. I can have mockups ready by next Wednesday."
+  },
+  {
+    "speaker": "Priya",
+    "start": 106.07,
+    "end": 109.35,
+    "text": "Great. And could you also take the FAQ page?"
+  },
+  {
+    "speaker": "Meera",
+    "start": 109.95,
+    "end": 113.42,
+    "text": "Hmm, I can, but it'll push the mockups back."
+  },
+  {
+    "speaker": "Priya",
+    "start": 114.02,
+    "end": 121.37,
+    "text": "No, mockups matter more. Forget it, I'll write the FAQ page myself. I'll have it done by November seventh."
+  },
+  {
+    "speaker": "Rahul",
+    "start": 121.97,
+    "end": 127.25,
+    "text": "What about an email campaign to existing users? I could put something together."
+  },
+  {
+    "speaker": "Priya",
+    "start": 127.85,
+    "end": 135.32,
+    "text": "Let's think about that. Actually, you know what, let's skip email for version one. We'll see how in-app promotion does first."
+  },
+  {
+    "speaker": "Rahul",
+    "start": 135.92,
+    "end": 137.45,
+    "text": "Fair enough."
+  },
+  {
+    "speaker": "Meera",
+    "start": 138.05,
+    "end": 143.02,
+    "text": "One more thing. Should the invite link go out through WhatsApp or SMS?"
+  },
+  {
+    "speaker": "Arjun",
+    "start": 143.62,
+    "end": 148.65,
+    "text": "WhatsApp is easier for users, but SMS works for everyone."
+  },
+  {
+    "speaker": "Rahul",
+    "start": 149.25,
+    "end": 153.15,
+    "text": "I'd lean WhatsApp, but I don't have numbers to back that up."
+  },
+  {
+    "speaker": "Priya",
+    "start": 153.75,
+    "end": 158.82,
+    "text": "Let's not decide that today. We'll circle back next week once we've seen some data."
+  },
+  {
+    "speaker": "Meera",
+    "start": 159.42,
+    "end": 164.85,
+    "text": "Oh, and someone should check whether the app store screenshots need updating for this."
+  },
+  {
+    "speaker": "Priya",
+    "start": 165.45,
+    "end": 168.37,
+    "text": "Yeah, good point, someone should look at that."
+  },
+  {
+    "speaker": "Arjun",
+    "start": 168.97,
+    "end": 170.7,
+    "text": "Anything else?"
+  },
+  {
+    "speaker": "Priya",
+    "start": 171.3,
+    "end": 179.55,
+    "text": "Just one thing from my side. I'll send the updated launch plan to leadership by end of day today. Thanks everyone, good meeting."
+  }
+]

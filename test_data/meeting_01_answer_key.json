@@ -1,0 +1,29 @@
+{
+  "meeting": "meeting_01",
+  "speakers": ["Priya", "Rahul", "Meera", "Arjun"],
+  "decisions": [
+    "Referral program launch moved from November 3 to November 10",
+    "Reward is 200 rupees in app credit for both the referrer and the new user (no cash)",
+    "No email campaign for version one, rely on in-app promotion"
+  ],
+  "action_items": [
+    {"task": "Build fraud check to block self-referrals", "owner": "Arjun", "deadline": "November 5"},
+    {"task": "Finalize referral terms and conditions with legal", "owner": "Rahul", "deadline": "This Friday"},
+    {"task": "Design share screen mockups", "owner": "Meera", "deadline": "Next Wednesday"},
+    {"task": "Write the FAQ page", "owner": "Priya", "deadline": "November 7"},
+    {"task": "Send updated launch plan to leadership", "owner": "Priya", "deadline": "End of day today"}
+  ],
+  "unassigned_items": [
+    {"task": "Check whether app store screenshots need updating", "owner": null, "note": "Should be flagged as unassigned, not given to Meera or Priya"}
+  ],
+  "open_questions": [
+    "Share invite link via WhatsApp or SMS - to revisit next week with data"
+  ],
+  "traps": [
+    {"type": "deadline_change", "detail": "Launch was November 3, changed to November 10. Only November 10 should appear."},
+    {"type": "reassignment", "detail": "FAQ page was offered to Meera, then Priya took it. Owner must be Priya."},
+    {"type": "cancelled_item", "detail": "Rahul offered an email campaign, then it was dropped. Must NOT appear as an action item."},
+    {"type": "vague_owner", "detail": "'Someone should check' the app store screenshots. No owner was assigned."},
+    {"type": "non_decision", "detail": "WhatsApp vs SMS was explicitly deferred. Must NOT appear as a decision."}
+  ]
+}

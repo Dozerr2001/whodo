@@ -1,0 +1,36 @@
+# Meeting 01 - Referral program launch sync
+# Format: SPEAKER: line. Lines starting with # are ignored.
+
+PRIYA: Okay, let's get started. Thanks for joining, everyone. Quick one today. We need to lock the plan for the referral program launch.
+RAHUL: Sounds good. Before we start, are we still looking at November third for launch?
+PRIYA: That's actually the first thing. Arjun, where are we on the backend?
+ARJUN: Honestly, November third is tight. The referral tracking works, but there's no fraud check yet. Right now someone could refer themselves with a second phone number and collect the reward.
+MEERA: Yeah, that would get expensive fast.
+PRIYA: Okay. How much time do you need?
+ARJUN: If I can have the fraud check done by November fifth, we're safe for a launch on the tenth.
+PRIYA: Then let's move it. Launch is now November tenth. Everyone okay with that?
+RAHUL: Works for me.
+MEERA: Same.
+PRIYA: Great. Arjun, the fraud check to block self-referrals is yours, done by November fifth.
+ARJUN: Got it.
+PRIYA: Next, the reward. Rahul, you looked into options?
+RAHUL: Yes. Cash rewards are a legal headache. My suggestion is two hundred rupees in app credit for both people, the person who refers and the friend who joins.
+MEERA: I like that it rewards both sides.
+PRIYA: Agreed. So that's decided, two hundred rupees in credit for both. Rahul, can you get the terms and conditions finalized with legal?
+RAHUL: Yes, I'll have that done by this Friday.
+PRIYA: Perfect. Meera, design?
+MEERA: I'll need to design the share screen, the one where users send their invite link. I can have mockups ready by next Wednesday.
+PRIYA: Great. And could you also take the FAQ page?
+MEERA: Hmm, I can, but it'll push the mockups back.
+PRIYA: No, mockups matter more. Forget it, I'll write the FAQ page myself. I'll have it done by November seventh.
+RAHUL: What about an email campaign to existing users? I could put something together.
+PRIYA: Let's think about that. Actually, you know what, let's skip email for version one. We'll see how in-app promotion does first.
+RAHUL: Fair enough.
+MEERA: One more thing. Should the invite link go out through WhatsApp or SMS?
+ARJUN: WhatsApp is easier for users, but SMS works for everyone.
+RAHUL: I'd lean WhatsApp, but I don't have numbers to back that up.
+PRIYA: Let's not decide that today. We'll circle back next week once we've seen some data.
+MEERA: Oh, and someone should check whether the app store screenshots need updating for this.
+PRIYA: Yeah, good point, someone should look at that.
+ARJUN: Anything else?
+PRIYA: Just one thing from my side. I'll send the updated launch plan to leadership by end of day today. Thanks everyone, good meeting.
