@@ -64,6 +64,28 @@ General rules:
 """
 
 
+PARTICIPANT_RULES = """\
+
+The attendees of this meeting are: {names}.
+- Every name you output (in speaker_map and as an owner) must be one of these names, or "{unknown}".
+  Never output any other name.
+- The transcript was produced by speech recognition, so names may be misspelled or misheard.
+  Match a name in the transcript to the closest attendee name.
+- Speaker labels come from a voice-separation step that makes mistakes. Use conversational cues
+  to work out who is really speaking, and let those cues override the label when they conflict:
+  * When someone is addressed by name ("Sam, can you...?"), the next reply usually comes from
+    that person, and the person addressed is not the one asking.
+  * A label can contain lines from two people who traded short turns. Look for a question
+    followed by its answer, or a request followed by acceptance, inside one label, and credit
+    each line to the person the conversation points to.
+  * A person who says "I'll do it" or "I'll write it myself" owns that task, whichever
+    label that sentence carries.
+  * If every attendee but one has been matched to a label or a cue, the leftover attendee
+    most likely owns the unmatched voice.
+- If the cues still do not settle it, use "{unknown}" instead of guessing.
+"""
+
+
 class Model(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -121,11 +143,14 @@ def ask(client, model, messages):
     return resp.choices[0].message.content or ""
 
 
-def extract(segments, model, token):
+def extract(segments, model, token, participants=None):
     client = InferenceClient(api_key=token)
     schema_hint = json.dumps(Extraction.model_json_schema())
+    rules = INSTRUCTIONS
+    if participants:
+        rules += PARTICIPANT_RULES.format(names=", ".join(participants), unknown=UNKNOWN)
     messages = [
-        {"role": "system", "content": INSTRUCTIONS + f"\nJSON schema:\n{schema_hint}"},
+        {"role": "system", "content": rules + f"\nJSON schema:\n{schema_hint}"},
         {"role": "user", "content": "Transcript:\n\n" + format_transcript(segments)},
     ]
     error = None
@@ -142,8 +167,10 @@ def extract(segments, model, token):
     sys.exit(f"Model returned invalid output twice: {error}")
 
 
-def default_output(transcript, model):
+def default_output(transcript, model, participants):
     name = transcript.stem.replace("_transcript", "_extracted")
+    if participants:
+        name += "_participants"
     if model != DEFAULT_MODEL:
         name += "_" + model.split("/")[-1].lower()
     return transcript.with_name(name + ".json")
@@ -154,6 +181,7 @@ def main():
     parser.add_argument("transcript", type=Path)
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("-o", "--output", type=Path)
+    parser.add_argument("--participants", help='comma-separated attendee names, e.g. "Priya,Rahul,Meera,Arjun"')
     args = parser.parse_args()
 
     load_dotenv(ROOT / ".env")
@@ -161,14 +189,22 @@ def main():
     if not token:
         sys.exit("HF_TOKEN not found. Put it in .env.")
 
+    participants = [n.strip() for n in args.participants.split(",") if n.strip()] if args.participants else None
     segments = json.loads(args.transcript.read_text())
     print(f"Extracting from {args.transcript.name} with {args.model}...")
-    result = extract(segments, args.model, token).model_dump()
+    result = extract(segments, args.model, token, participants).model_dump()
     result["speaker_map"] = {e["speaker"]: e["name"] for e in result["speaker_map"]}
     result["decisions"] = [d["decision"] for d in result["decisions"]]
     result["model"] = args.model
+    if participants:
+        result["participants"] = participants
+        allowed = {n.lower() for n in participants} | {UNKNOWN}
+        used = set(result["speaker_map"].values()) | {i["owner"] for i in result["action_items"]}
+        stray = sorted(n for n in used if n.lower() not in allowed)
+        if stray:
+            print(f"  warning: names outside the participant list: {stray}")
 
-    out = args.output or default_output(args.transcript, args.model)
+    out = args.output or default_output(args.transcript, args.model, participants)
     out.write_text(json.dumps(result, indent=2, ensure_ascii=False))
     print(
         f"Saved {out}: {len(result['action_items'])} action items, {len(result['decisions'])} decisions, "

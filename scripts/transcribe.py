@@ -22,7 +22,10 @@ from transformers import pipeline as hf_pipeline
 
 ROOT = Path(__file__).resolve().parent.parent
 WHISPER_MODEL = "openai/whisper-large-v3-turbo"
-DIARIZATION_MODEL = "pyannote/speaker-diarization-3.1"
+DIARIZATION_MODELS = {
+    "3.1": "pyannote/speaker-diarization-3.1",
+    "community-1": "pyannote/speaker-diarization-community-1",
+}
 WHISPER_SR = 16000
 
 
@@ -67,9 +70,9 @@ def transcribe(waveform, sr, device):
     return words
 
 
-def diarize(waveform, sr, device, token, num_speakers=None):
+def diarize(waveform, sr, device, token, num_speakers=None, model="3.1"):
     """pyannote -> list of (start, end, speaker) turns."""
-    pipe = Pipeline.from_pretrained(DIARIZATION_MODEL, token=token)
+    pipe = Pipeline.from_pretrained(DIARIZATION_MODELS[model], token=token)
     pipe.to(torch.device(device))
     output = pipe({"waveform": waveform, "sample_rate": sr}, num_speakers=num_speakers)
     # Newer pyannote versions wrap the result; older ones return the Annotation directly.
@@ -115,6 +118,7 @@ def main():
     parser.add_argument("audio", type=Path)
     parser.add_argument("-o", "--output", type=Path, help="default: test_data/<audio name>_transcript.json")
     parser.add_argument("--num-speakers", type=int, help="exact number of speakers, if known (default: pyannote guesses)")
+    parser.add_argument("--diarization-model", choices=DIARIZATION_MODELS, default="3.1", help="pyannote pipeline (default: 3.1)")
     args = parser.parse_args()
 
     load_dotenv(ROOT / ".env")
@@ -131,7 +135,7 @@ def main():
     print(f"  {len(words)} words")
 
     print("Diarizing with pyannote...")
-    turns = diarize(waveform, sr, device, token, args.num_speakers)
+    turns = diarize(waveform, sr, device, token, args.num_speakers, args.diarization_model)
     print(f"  {len(turns)} speaker turns, {len({t[2] for t in turns})} speakers")
 
     labeled = assign_speakers(words, turns)
