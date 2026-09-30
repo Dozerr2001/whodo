@@ -108,6 +108,11 @@ This creates `test_data/meeting_01.wav` (the audio) and `test_data/meeting_01_sp
 
 The answer key lists exactly what the app should and should not return.
 
+## Known issues
+
+- **pyannote merges similar voices on short lines.** On `meeting_01`, pyannote found 3 speakers instead of 4 and labeled Meera's lines as Priya's. Without a hint, 92.3% of transcript lines had the right speaker (94.5% of speaking time). Wrong speakers mean wrong owners in the action item table.
+- **Giving the speaker count helps.** Running `python scripts/transcribe.py test_data/meeting_01.wav --num-speakers 4` found all 4 speakers and raised line accuracy to 95.2% (40 of 42 lines; 98.0% of speaking time). The 2 remaining errors are a one-word "Same." and a short question. This is one synthetic meeting, so treat the numbers as rough. The real app may not know the speaker count, so it could be an optional field on the upload form.
+
 ## Status
 
 - [x] Synthetic meeting generator (Kokoro text-to-speech)

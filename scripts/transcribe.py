@@ -67,11 +67,11 @@ def transcribe(waveform, sr, device):
     return words
 
 
-def diarize(waveform, sr, device, token):
+def diarize(waveform, sr, device, token, num_speakers=None):
     """pyannote -> list of (start, end, speaker) turns."""
     pipe = Pipeline.from_pretrained(DIARIZATION_MODEL, token=token)
     pipe.to(torch.device(device))
-    output = pipe({"waveform": waveform, "sample_rate": sr})
+    output = pipe({"waveform": waveform, "sample_rate": sr}, num_speakers=num_speakers)
     # Newer pyannote versions wrap the result; older ones return the Annotation directly.
     annotation = getattr(output, "speaker_diarization", output)
     return [
@@ -114,6 +114,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("audio", type=Path)
     parser.add_argument("-o", "--output", type=Path, help="default: test_data/<audio name>_transcript.json")
+    parser.add_argument("--num-speakers", type=int, help="exact number of speakers, if known (default: pyannote guesses)")
     args = parser.parse_args()
 
     load_dotenv(ROOT / ".env")
@@ -130,7 +131,7 @@ def main():
     print(f"  {len(words)} words")
 
     print("Diarizing with pyannote...")
-    turns = diarize(waveform, sr, device, token)
+    turns = diarize(waveform, sr, device, token, args.num_speakers)
     print(f"  {len(turns)} speaker turns, {len({t[2] for t in turns})} speakers")
 
     labeled = assign_speakers(words, turns)
