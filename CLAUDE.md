@@ -14,10 +14,11 @@ Pipeline: Audio → Whisper + pyannote → labeled transcript → LLM → action
 
 ## Project structure
 
-- `scripts/` helper scripts (generate_meeting.py makes synthetic test audio with Kokoro TTS)
+- `meetingmate/` the pipeline as importable code: `transcribe.py` (Whisper + pyannote), `extract.py` (LLM), `pipeline.py` (both, with progress events and a timing log), `config.py` (local vs Space settings)
+- `scripts/` command-line wrappers around `meetingmate/` (transcribe.py, extract.py), plus score.py, eval_diarization.py and generate_meeting.py (makes synthetic test audio with Kokoro TTS)
 - `test_data/` meeting scripts, generated audio, speaker timelines, and answer keys
-- `app/` the actual app (not built yet)
-- `docs/brief.md` project brief with scope and success targets
+- `app/app.py` the Gradio app. Run with `.venv/bin/python app/app.py`. On a Space (`SPACE_ID` set) it caps audio at 10 minutes and shows cached sample results; override with `MEETINGMATE_MAX_AUDIO_MINUTES` and `MEETINGMATE_SAMPLE_MODE=live|cached`.
+- `logs/timings.jsonl` (gitignored) real per-step run times, used to check the wait estimates in `config.py`
 
 ## Environment notes
 

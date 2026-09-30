@@ -3,3 +3,5 @@
 *.wav
 .DS_Store
 __pycache__/
+
+logs/
