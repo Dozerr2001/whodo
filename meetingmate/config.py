@@ -26,6 +26,15 @@ MAX_AUDIO_MINUTES = _minutes(os.environ.get("MEETINGMATE_MAX_AUDIO_MINUTES"), 10
 # "live" runs the real pipeline on the sample recording; "cached" shows saved results.
 SAMPLE_MODE = os.environ.get("MEETINGMATE_SAMPLE_MODE", "cached" if ON_SPACES else "live")
 
+# Dev mode: keep the real Whisper and pyannote steps but never call the LLM, so working on the UI costs no credits.
+#   "saved"          the saved sample results stand in for the LLM's answer
+#   "outage"         pretend the LLM is unavailable (to see the error message)
+#   "summary-outage" saved results, but pretend only the summary call failed
+# Ignored on a Space, so a stray setting can never put fake results in front of visitors.
+DEV_LLM = "" if ON_SPACES else os.environ.get("MEETINGMATE_DEV_LLM", "").strip().lower()
+if DEV_LLM not in ("", "saved", "outage", "summary-outage"):
+    raise SystemExit(f"MEETINGMATE_DEV_LLM must be saved, outage or summary-outage, not {DEV_LLM!r}")
+
 # Seconds of processing per second of audio, plus a fixed cost for the LLM call and model loading.
 # "mps" is measured (Mac, 3-minute sample: Whisper 72s, pyannote 18s, LLM 2s). "cuda" and "cpu" are
 # unmeasured guesses. Every run appends its real timings to logs/timings.jsonl so these can be corrected.

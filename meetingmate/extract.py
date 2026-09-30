@@ -1,10 +1,11 @@
 """Pull decisions, action items and open questions out of a labeled transcript.
 
-Asks an open model on Hugging Face Inference Providers to return structured JSON.
+Asks an open model to return structured JSON: Groq first (GROQ_API_KEY), Hugging Face Inference Providers as the fallback.
 The command-line entry point is scripts/extract.py.
 """
 
 import json
+import os
 import re
 from pathlib import Path
 
@@ -86,8 +87,18 @@ The attendees of this meeting are: {names}.
 """
 
 
+LLM_UNAVAILABLE = "The AI service is temporarily unavailable. Try the example instead."
+
+
 class ExtractionError(Exception):
     """The model never returned valid output."""
+
+
+class LLMUnavailable(ExtractionError):
+    """The LLM could not be reached or refused the call (no credits, rate limit, outage). str() is the message for users."""
+
+    def __init__(self):
+        super().__init__(LLM_UNAVAILABLE)
 
 
 class Model(BaseModel):
@@ -142,6 +153,12 @@ def parse_json(text):
     return json.loads(fenced.group(1) if fenced else text)
 
 
+def _describe(error):
+    """Error type and HTTP status only, for the server log. Never the message, which can carry request details."""
+    status = getattr(getattr(error, "response", None), "status_code", None)
+    return type(error).__name__ + (f" {status}" if status else "")
+
+
 def ask(client, model, messages, schema_model):
     """One chat call. Prefer strict JSON-schema output; fall back if the provider refuses it."""
     schema = {
@@ -151,21 +168,46 @@ def ask(client, model, messages, schema_model):
     try:
         resp = client.chat_completion(model=model, messages=messages, temperature=0, max_tokens=8000, response_format=schema)
     except Exception as e:  # provider may not support structured output for this model
-        print(f"  structured output rejected ({type(e).__name__}); retrying with prompt only")
-        resp = client.chat_completion(model=model, messages=messages, temperature=0, max_tokens=8000)
+        print(f"  structured output rejected ({_describe(e)}); retrying with prompt only")
+        try:
+            resp = client.chat_completion(model=model, messages=messages, temperature=0, max_tokens=8000)
+        except Exception as e2:  # no credits, rate limit, outage, no network: nothing more to try
+            print(f"  LLM call failed ({_describe(e2)})")
+            raise LLMUnavailable() from e2
     return resp.choices[0].message.content or ""
+
+
+def make_clients(token):
+    """Groq first when GROQ_API_KEY is set (same model, called directly), then Hugging Face Inference Providers."""
+    clients = []
+    groq_key = os.environ.get("GROQ_API_KEY")
+    if groq_key:
+        clients.append(("Groq", InferenceClient(provider="groq", api_key=groq_key)))
+    clients.append(("Hugging Face", InferenceClient(api_key=token)))
+    return clients
+
+
+def ask_any(clients, model, messages, schema_model):
+    """Try each provider in order; LLMUnavailable only when every one of them failed."""
+    for i, (name, client) in enumerate(clients):
+        try:
+            return ask(client, model, messages, schema_model)
+        except LLMUnavailable:
+            if i + 1 < len(clients):
+                print(f"  {name} failed; falling back to {clients[i + 1][0]}")
+    raise LLMUnavailable()
 
 
 def ask_structured(token, model, rules, transcript_text, schema_model):
     """Send rules plus a transcript and return the answer as a validated schema_model."""
-    client = InferenceClient(api_key=token)
+    clients = make_clients(token)
     messages = [
         {"role": "system", "content": rules + f"\nJSON schema:\n{json.dumps(schema_model.model_json_schema())}"},
         {"role": "user", "content": transcript_text},
     ]
     error = None
     for attempt in range(2):  # second try shows the model what was wrong with its first answer
-        raw = ask(client, model, messages, schema_model)
+        raw = ask_any(clients, model, messages, schema_model)
         try:
             return schema_model.model_validate(parse_json(raw))
         except (json.JSONDecodeError, ValidationError) as e:

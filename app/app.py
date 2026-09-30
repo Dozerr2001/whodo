@@ -20,7 +20,7 @@ sys.path.insert(0, str(ROOT))
 
 from meetingmate import config  # noqa: E402
 from meetingmate import render  # noqa: E402
-from meetingmate.extract import name_speakers  # noqa: E402
+from meetingmate.extract import LLM_UNAVAILABLE, LLMUnavailable, name_speakers  # noqa: E402
 from meetingmate.pipeline import Progress, estimate_seconds, load_cached, run  # noqa: E402
 from meetingmate.render import fmt_duration  # noqa: E402
 from meetingmate.transcribe import pick_device  # noqa: E402
@@ -39,6 +39,7 @@ SAMPLE_DESCRIPTION = (
     "A 3-minute product meeting with 4 people, including a reassigned task, a cancelled idea and a moved deadline."
 )
 COPY_JS = """async (text) => {
+    if (!text) return 'No summary to copy';
     try { await navigator.clipboard.writeText(text); }
     catch (e) {  // clipboard API needs a secure page; fall back to the old way
         const box = document.createElement('textarea'); box.value = text; document.body.appendChild(box);
@@ -66,6 +67,11 @@ deleted from the server within about an hour, and MeetingMate keeps no copy of y
 Don't upload confidential meetings to a public demo."""
 
 UNASSIGNED_HEAD = "### Unassigned items\nMentioned as needing to be done, but nobody took them on."
+DEV_BANNERS = {
+    "saved": "🛠 **Dev mode.** Transcription and speakers are real, but the action items and summary are saved sample output, not from this recording.",
+    "outage": "🛠 **Dev mode.** Pretending the AI service is down, to show the error message.",
+    "summary-outage": "🛠 **Dev mode.** Action items are saved sample output, and the summary call is pretending to fail.",
+}
 STOPPED_STATUS = "⏹ Analysis stopped. Your recording and settings are kept, so you can change them and run again."
 CONTROLS = {}  # run id -> RunControl, for every run that has been started and not yet stopped or finished
 N_OUTPUTS = 13  # status, banner, results column, summary text, summary, counts, tables and headings, transcript, csv
@@ -205,6 +211,8 @@ def progress_status(p: Progress, audio_secs, device):
 def finish_status(result):
     warning = result.extraction.get("stray_names")
     note = f" ⚠️ Names outside the participant list: {', '.join(warning)}." if warning else ""
+    if result.extraction.get("summary_error"):
+        note += " ⚠️ The summary could not be written (see above the results)."
     if result.cached:
         return "Done." + note
     return f"✅ Done in {fmt_duration(result.timings['total'])}." + note
@@ -213,6 +221,8 @@ def finish_status(result):
 def stream_run(audio_path, participants, num_speakers, anchor, banner, control):
     """Run the pipeline and yield UI updates. The status changes on every heartbeat; the tables only at the end."""
     token = get_token()
+    if config.DEV_LLM:
+        banner = DEV_BANNERS[config.DEV_LLM] + ("\n\n" + banner if banner else "")
     secs = audio_seconds(audio_path)
     check_length(secs)
     device = pick_device()
@@ -226,6 +236,9 @@ def stream_run(audio_path, participants, num_speakers, anchor, banner, control):
                 result = event
     except Stopped:
         yield outputs_from(STOPPED_STATUS, "", None, anchor)  # the inputs are not touched, so the user can fix and re-run
+        return
+    except LLMUnavailable:  # shown in the status line, where the progress was, and the buttons return to normal
+        yield outputs_from(f"⚠️ {LLM_UNAVAILABLE}", banner, None, anchor)
         return
     except gr.Error:
         raise

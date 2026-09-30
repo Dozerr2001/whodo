@@ -4,7 +4,9 @@ This is a separate LLM call from extract.py. Asking one call to extract tasks an
 made both worse, so each gets its own prompt. The tables come from extract.py; this explains the why.
 """
 
-from .extract import DEFAULT_MODEL, Model, ask_structured, extract_to_dict, format_transcript, name_speakers
+from .extract import (
+    DEFAULT_MODEL, LLM_UNAVAILABLE, LLMUnavailable, Model, ask_structured, extract_to_dict, format_transcript, name_speakers,
+)
 from .quotes import find_source
 
 INSTRUCTIONS = """\
@@ -45,6 +47,10 @@ Rules:
 """
 
 
+SUMMARY_UNAVAILABLE = f"No summary this time. {LLM_UNAVAILABLE} The action items and decisions below are not affected."
+SUMMARY_FAILED = "No summary this time: the AI service gave an unusable answer. The action items and decisions below are not affected."
+
+
 class Topic(Model):
     title: str
     discussed: str
@@ -73,17 +79,21 @@ def summarize(named_segments, model, token):
 
 
 def extract_with_summary(segments, model=DEFAULT_MODEL, token=None, participants=None, stopped=None):
-    """extract_to_dict() plus a "summary". A failed summary leaves summary as None rather than failing the run.
+    """extract_to_dict() plus a "summary".
 
+    If only the summary fails, the action items are still returned: summary is None and summary_error says
+    why, so the page can tell the user. A failure of the extraction itself raises, as before.
     stopped is an optional function that says whether the run was stopped; if so, the second LLM call is skipped.
     """
     result = extract_to_dict(segments, model, token, participants)
+    result["summary"], result["summary_error"] = None, None
     if stopped and stopped():
-        result["summary"] = None
         return result
     try:
         result["summary"] = summarize(name_speakers(segments, result["speaker_map"]), model, token)
-    except Exception as e:
-        print(f"  summary failed ({type(e).__name__}); continuing without it")
-        result["summary"] = None
+    except LLMUnavailable:
+        result["summary_error"] = SUMMARY_UNAVAILABLE
+    except Exception as e:  # e.g. the model's answer was unusable twice
+        print(f"  summary failed ({type(e).__name__})")
+        result["summary_error"] = SUMMARY_FAILED
     return result

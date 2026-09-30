@@ -68,10 +68,11 @@ def summary_text(ex):
 
 
 def summary_block(ex):
-    """The overview and the discussion points, as HTML. Empty if the extraction has no summary."""
+    """The overview and the discussion points, as HTML. If the summary failed, says so instead of leaving a gap."""
     summary = ex.get("summary")
     if not summary:
-        return ""
+        error = ex.get("summary_error")
+        return f'<div class="mm-notice">⚠️ {escape(error)}</div>' if error else ""
     topics = ""
     for t in summary["topics"]:
         time = f' <span class="mm-muted mm-time">{time_label(t["start"])}</span>' if t["start"] is not None else ""
@@ -152,6 +153,8 @@ CSS = """
 .mm-topic p { margin: 4px 0; }
 .mm-topic ul { margin: 2px 0 4px 20px; padding: 0; }
 .mm-time { font-weight: 400; font-size: var(--text-sm); }
+.mm-notice { font-family: var(--font); font-size: var(--text-md); padding: 10px 12px; border-radius: 8px; background: #fef3c7; color: #78350f; border: 1px solid #f59e0b; }
+.dark .mm-notice { background: #78350f; color: #fde68a; }
 .mm-scroll { overflow-x: auto; }
 .mm-table { width: 100%; border-collapse: collapse; font-family: var(--font); font-size: var(--text-md); }
 .mm-table th, .mm-table td { text-align: left; vertical-align: top; padding: 8px 12px; border-bottom: 1px solid var(--border-color-primary); }

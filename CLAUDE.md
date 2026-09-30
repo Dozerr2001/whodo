@@ -33,9 +33,10 @@ Pipeline: Audio → Whisper + pyannote → labeled transcript → LLM → action
 
 - **Diarization:** `pyannote/speaker-diarization-community-1` with a speaker count hint (`--num-speakers`). Word-level accuracy is about 90% with the hint and 79% without. community-1 and 3.1 are about equal, so the hint is what matters.
 - **Participants:** pass `--participants "A,B,C"` to `extract.py`. It fixes misspelled names ("Mira" for "Meera"), names people who are never addressed, and corrects speaker label errors. Owners went from 2/5 to 4/5 and all 5 traps passed.
-- **LLM:** `openai/gpt-oss-120b` through HF Inference Providers. It beat `Qwen/Qwen3-235B-A22B-Instruct-2507`, which missed a task.
+- **LLM:** `openai/gpt-oss-120b` through Groq (`GROQ_API_KEY` in `.env`), falling back to HF Inference Providers. It beat `Qwen/Qwen3-235B-A22B-Instruct-2507`, which missed a task.
 - **Measure speakers word by word** with `scripts/eval_diarization.py`. Line-level accuracy hid merged turns and read about 13 points too high.
 - **The LLM copies deadline phrases as spoken; code turns them into dates** using the meeting date (the sample uses a fixed one, 2026-10-26). Quotes are checked against the transcript in code, and speaker and time come from the matched line.
+- **Dev mode saves credits.** `MEETINGMATE_DEV_LLM=saved` keeps the real Whisper and pyannote steps but uses the saved sample results instead of calling the LLM (`outage` and `summary-outage` simulate a failed LLM or summary, to see the error messages). Ignored on a Space. A failed LLM call shows "The AI service is temporarily unavailable. Try the example instead."; a failed summary shows a notice above the results.
 - **Keep the extraction prompt general.** Never put anything from the answer key in it. The trap keywords live in `scripts/score.py`.
 - One run per setup on one synthetic meeting, and LLM output varies between runs, so treat these numbers as rough.
 

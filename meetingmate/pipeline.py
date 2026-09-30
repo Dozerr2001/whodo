@@ -16,13 +16,15 @@ from pathlib import Path
 
 import soundfile as sf
 
+from . import config
 from .config import SPEED_FACTORS
-from .extract import DEFAULT_MODEL
-from .summarize import extract_with_summary
+from .extract import DEFAULT_MODEL, LLMUnavailable
+from .summarize import SUMMARY_UNAVAILABLE, extract_with_summary
 from .transcribe import DEFAULT_DIARIZATION_MODEL, assign_speakers, pick_device
 from .worker import WORKER, RunControl, WorkerDied
 
 ROOT = Path(__file__).resolve().parent.parent
+DEV_SAVED_RESULT = ROOT / "test_data" / "meeting_01_extracted_cc1_4spk_participants.json"
 TIMING_LOG = Path(os.environ.get("MEETINGMATE_LOG_DIR", ROOT / "logs")) / "timings.jsonl"
 TICK_SECONDS = 2.0  # how often a Progress event goes out
 STOP_POLL_SECONDS = 0.1  # how often a run looks at its stop switch
@@ -48,6 +50,16 @@ class Result:
     extraction: dict
     timings: dict = field(default_factory=dict)  # seconds per step; empty for cached results
     cached: bool = False
+
+
+def dev_extraction(segments, llm, token, participants, stopped=None):
+    """Stands in for extract_with_summary in dev mode (config.DEV_LLM): saved output, or a pretend outage."""
+    if config.DEV_LLM == "outage":
+        raise LLMUnavailable()
+    result = json.loads(DEV_SAVED_RESULT.read_text())
+    if config.DEV_LLM == "summary-outage":
+        result["summary"], result["summary_error"] = None, SUMMARY_UNAVAILABLE
+    return result
 
 
 def estimate_seconds(audio_seconds, device=None):
@@ -158,7 +170,7 @@ def run(audio_path, token, participants=None, num_speakers=None,
         control.check()  # stopped before this point means the LLM is never called
         started = time.time()
         yield Progress(3, *STEPS[2], 0.0)
-        extraction = yield from _step(2, control, extract_with_summary, segments, llm, token, participants, lambda: control.stopped)
+        extraction = yield from _step(2, control, dev_extraction if config.DEV_LLM else extract_with_summary, segments, llm, token, participants, lambda: control.stopped)
         timings[STEPS[2][0]] = time.time() - started
 
         timings["total"] = sum(timings.values())
