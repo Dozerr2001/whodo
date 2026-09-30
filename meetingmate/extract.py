@@ -142,11 +142,11 @@ def parse_json(text):
     return json.loads(fenced.group(1) if fenced else text)
 
 
-def ask(client, model, messages):
+def ask(client, model, messages, schema_model):
     """One chat call. Prefer strict JSON-schema output; fall back if the provider refuses it."""
     schema = {
         "type": "json_schema",
-        "json_schema": {"name": "extraction", "schema": Extraction.model_json_schema(), "strict": True},
+        "json_schema": {"name": "extraction", "schema": schema_model.model_json_schema(), "strict": True},
     }
     try:
         resp = client.chat_completion(model=model, messages=messages, temperature=0, max_tokens=8000, response_format=schema)
@@ -156,21 +156,18 @@ def ask(client, model, messages):
     return resp.choices[0].message.content or ""
 
 
-def extract(segments, model, token, participants=None):
+def ask_structured(token, model, rules, transcript_text, schema_model):
+    """Send rules plus a transcript and return the answer as a validated schema_model."""
     client = InferenceClient(api_key=token)
-    schema_hint = json.dumps(Extraction.model_json_schema())
-    rules = INSTRUCTIONS
-    if participants:
-        rules += PARTICIPANT_RULES.format(names=", ".join(participants), unknown=UNKNOWN)
     messages = [
-        {"role": "system", "content": rules + f"\nJSON schema:\n{schema_hint}"},
-        {"role": "user", "content": "Transcript:\n\n" + format_transcript(segments)},
+        {"role": "system", "content": rules + f"\nJSON schema:\n{json.dumps(schema_model.model_json_schema())}"},
+        {"role": "user", "content": transcript_text},
     ]
     error = None
     for attempt in range(2):  # second try shows the model what was wrong with its first answer
-        raw = ask(client, model, messages)
+        raw = ask(client, model, messages, schema_model)
         try:
-            return Extraction.model_validate(parse_json(raw))
+            return schema_model.model_validate(parse_json(raw))
         except (json.JSONDecodeError, ValidationError) as e:
             error = e
             messages += [
@@ -178,6 +175,13 @@ def extract(segments, model, token, participants=None):
                 {"role": "user", "content": f"That was not valid against the schema: {e}\nReturn corrected JSON only."},
             ]
     raise ExtractionError(f"Model returned invalid output twice: {error}")
+
+
+def extract(segments, model, token, participants=None):
+    rules = INSTRUCTIONS
+    if participants:
+        rules += PARTICIPANT_RULES.format(names=", ".join(participants), unknown=UNKNOWN)
+    return ask_structured(token, model, rules, "Transcript:\n\n" + format_transcript(segments), Extraction)
 
 
 def extract_to_dict(segments, model, token, participants=None):

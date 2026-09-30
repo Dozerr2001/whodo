@@ -20,7 +20,8 @@ from dotenv import load_dotenv
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from meetingmate.extract import DEFAULT_MODEL, ExtractionError, default_output, extract_to_dict  # noqa: E402
+from meetingmate.extract import DEFAULT_MODEL, ExtractionError, default_output  # noqa: E402
+from meetingmate.summarize import extract_with_summary  # noqa: E402
 
 
 def main():
@@ -40,7 +41,7 @@ def main():
     segments = json.loads(args.transcript.read_text())
     print(f"Extracting from {args.transcript.name} with {args.model}...")
     try:
-        result = extract_to_dict(segments, args.model, token, participants)
+        result = extract_with_summary(segments, args.model, token, participants)
     except ExtractionError as e:
         sys.exit(str(e))
     stray = result.pop("stray_names", None)

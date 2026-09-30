@@ -97,5 +97,67 @@
     "Rahul",
     "Meera",
     "Arjun"
-  ]
+  ],
+  "summary": {
+    "overview": "The meeting locked the plan for the referral program launch, moving the launch date to November 10 and assigning the fraud‑check task to be completed by November 5. It also set the reward to a 200‑rupee app credit for both parties, assigned the FAQ write‑up to Priya, postponed the email campaign and invite‑link channel decision, and noted a review of app‑store screenshots.",
+    "topics": [
+      {
+        "title": "Launch date adjustment due to fraud check timing",
+        "discussed": "The team evaluated whether the November 3 launch was feasible, noting the lack of a fraud check, and decided to move the launch to November 10.",
+        "options_considered": [
+          "keep November 3 launch",
+          "move launch to November 10"
+        ],
+        "outcome_reasoning": "Launch moved to November 10 because the fraud check cannot be completed by November 3; Arjun can finish it by November 5, allowing a safe launch on the 10th.",
+        "start": 16.32
+      },
+      {
+        "title": "Reward structure for referral program",
+        "discussed": "Reward options were considered; cash rewards were seen as a legal headache, and a 200‑rupee app credit for both referrer and referee was proposed and accepted.",
+        "options_considered": [
+          "cash rewards",
+          "200 rupees app credit for both parties"
+        ],
+        "outcome_reasoning": "Decided on 200 rupee app credit for both sides because it avoids legal issues and was agreed by the team.",
+        "start": 65.48
+      },
+      {
+        "title": "FAQ writing and share‑screen mock‑up responsibilities",
+        "discussed": "Meera offered to create share‑screen mock‑ups and also write the FAQ page, but Priya said mock‑ups were less important and she would write the FAQ herself by November 7.",
+        "options_considered": [
+          "Meera creates both share screen mock‑ups and FAQ",
+          "Priya writes FAQ herself"
+        ],
+        "outcome_reasoning": "Priya will write the FAQ page herself by November 7; share‑screen mock‑ups were not prioritized.",
+        "start": 93.16
+      },
+      {
+        "title": "Email campaign for version 1",
+        "discussed": "Rahul suggested an email campaign, but Priya proposed skipping email for version 1 to first test an app promotion.",
+        "options_considered": [
+          "run email campaign",
+          "skip email for version 1"
+        ],
+        "outcome_reasoning": "Email campaign was skipped for version 1 to focus on app promotion first.",
+        "start": 120.94
+      },
+      {
+        "title": "Invite link channel selection",
+        "discussed": "The channel for sending invite links was debated; WhatsApp is easier, SMS works for everyone, and Rahul leaned toward WhatsApp but lacked data; decision was deferred.",
+        "options_considered": [
+          "WhatsApp",
+          "SMS"
+        ],
+        "outcome_reasoning": "Decision on channel will be revisited next week after data is gathered; no choice made today.",
+        "start": 136.76
+      },
+      {
+        "title": "App store screenshot review",
+        "discussed": "The need to check if app store screenshots need updating was raised; Priya said someone should look at it.",
+        "options_considered": [],
+        "outcome_reasoning": "Will be looked at; no further reasoning given.",
+        "start": 157.98
+      }
+    ]
+  }
 }

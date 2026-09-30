@@ -6,6 +6,7 @@ Run locally:  .venv/bin/python app/app.py
 import os
 import sys
 import tempfile
+import uuid
 from datetime import date
 from pathlib import Path
 
@@ -23,6 +24,7 @@ from meetingmate.extract import name_speakers  # noqa: E402
 from meetingmate.pipeline import Progress, estimate_seconds, load_cached, run  # noqa: E402
 from meetingmate.render import fmt_duration  # noqa: E402
 from meetingmate.transcribe import pick_device  # noqa: E402
+from meetingmate.worker import RunControl, Stopped  # noqa: E402
 
 load_dotenv(ROOT / ".env")  # does nothing on a Space, where HF_TOKEN is a secret env var
 
@@ -36,6 +38,15 @@ SAMPLE_MEETING_DATE = date(2026, 10, 26)  # a Monday; fixed so "this Friday" res
 SAMPLE_DESCRIPTION = (
     "A 3-minute product meeting with 4 people, including a reassigned task, a cancelled idea and a moved deadline."
 )
+COPY_JS = """async (text) => {
+    try { await navigator.clipboard.writeText(text); }
+    catch (e) {  // clipboard API needs a secure page; fall back to the old way
+        const box = document.createElement('textarea'); box.value = text; document.body.appendChild(box);
+        box.select(); document.execCommand('copy'); box.remove();
+    }
+    return 'Copied ✓';
+}"""
+RESET_COPY_JS = "async () => { await new Promise(r => setTimeout(r, 1500)); return 'Copy summary'; }"
 INPUT_CSS = """
 .mm-col { max-width: 720px; width: 100%; margin: 0 auto; gap: 12px; }
 .mm-small, .mm-small p { font-size: var(--text-sm); color: var(--body-text-color-subdued); }
@@ -55,7 +66,9 @@ deleted from the server within about an hour, and MeetingMate keeps no copy of y
 Don't upload confidential meetings to a public demo."""
 
 UNASSIGNED_HEAD = "### Unassigned items\nMentioned as needing to be done, but nobody took them on."
-N_OUTPUTS = 11  # status, banner, results column, summary, three table blocks, unassigned heading, questions, transcript, csv
+STOPPED_STATUS = "⏹ Analysis stopped. Your recording and settings are kept, so you can change them and run again."
+CONTROLS = {}  # run id -> RunControl, for every run that has been started and not yet stopped or finished
+N_OUTPUTS = 13  # status, banner, results column, summary text, summary, counts, tables and headings, transcript, csv
 
 
 def fmt_minutes(seconds):
@@ -125,23 +138,26 @@ def transcript_text(segments):
 
 
 CSV_COLUMNS = [
-    "type", "text", "owner", "deadline_as_spoken", "deadline_date", "date_needs_check",
+    "type", "text", "topic_start", "owner", "deadline_as_spoken", "deadline_date", "date_needs_check",
     "quote", "quote_speaker", "quote_time",
 ]
 
 
-def csv_row(kind, text, owner="", deadline="", anchor=None, source=None):
+def csv_row(kind, text, owner="", deadline="", anchor=None, source=None, topic_start=""):
     date_text, phrase, check = render.deadline_parts(deadline, anchor)
     source = source or {}
     return (
-        kind, text, owner, phrase, date_text, "yes" if check else "",
+        kind, text, topic_start, owner, phrase, date_text, "yes" if check else "",
         source.get("quote", ""), source.get("speaker", ""), fmt_duration(source["time"]) if source else "",
     )
 
 
 def build_csv(ex, anchor):
+    summary = ex.get("summary")
     rows = (
-        [csv_row("action item", i["task"], render.owner_label(i["owner"]), i["deadline"], anchor, i["source"]) for i in ex["action_items"]]
+        ([csv_row("summary", summary["overview"])] if summary else [])
+        + [csv_row("summary topic", render.topic_text(t), topic_start=render.time_label(t["start"])) for t in (summary or {}).get("topics", [])]
+        + [csv_row("action item", i["task"], render.owner_label(i["owner"]), i["deadline"], anchor, i["source"]) for i in ex["action_items"]]
         + [csv_row("decision", d["decision"], source=d["source"]) for d in ex["decisions"]]
         + [csv_row("unassigned", i["task"], render.NEEDS_OWNER) for i in ex["unassigned_items"]]
         + [csv_row("open question", q) for q in ex["open_questions"]]
@@ -158,13 +174,15 @@ def outputs_from(status, banner, result, anchor):
     With no result the results section is hidden, so a new run never shows the previous run's tables.
     """
     if result is None:
-        return status, banner, gr.update(visible=False), "", "", "", "", "", "", "", None
+        return status, banner, gr.update(visible=False), "", "", "", "", "", "", "", "", "", None
     ex = result.extraction
     segments = name_speakers(result.segments, ex["speaker_map"])
     return (
         status,
         banner,
         gr.update(visible=True),
+        render.summary_text(ex),
+        render.summary_block(ex),
         f'<div class="mm-summary">{render.summary_line(ex)}</div>',
         render.action_table(ex, anchor),
         render.decisions_table(ex),
@@ -192,7 +210,7 @@ def finish_status(result):
     return f"✅ Done in {fmt_duration(result.timings['total'])}." + note
 
 
-def stream_run(audio_path, participants, num_speakers, anchor, banner):
+def stream_run(audio_path, participants, num_speakers, anchor, banner, control):
     """Run the pipeline and yield UI updates. The status changes on every heartbeat; the tables only at the end."""
     token = get_token()
     secs = audio_seconds(audio_path)
@@ -201,11 +219,14 @@ def stream_run(audio_path, participants, num_speakers, anchor, banner):
     yield outputs_from(f"⏳ Starting… estimated {fmt_minutes(estimate_seconds(secs, device))}.", banner, None, anchor)
     result = None
     try:
-        for event in run(audio_path, token, parse_names(participants), num_speakers):
+        for event in run(audio_path, token, parse_names(participants), num_speakers, control=control):
             if isinstance(event, Progress):
                 yield (progress_status(event, secs, device),) + (gr.skip(),) * (N_OUTPUTS - 1)
             else:
                 result = event
+    except Stopped:
+        yield outputs_from(STOPPED_STATUS, "", None, anchor)  # the inputs are not touched, so the user can fix and re-run
+        return
     except gr.Error:
         raise
     except Exception as e:
@@ -213,10 +234,44 @@ def stream_run(audio_path, participants, num_speakers, anchor, banner):
     yield outputs_from(finish_status(result), banner, result, anchor)
 
 
-def analyze(audio_path, participants, num_speakers, meeting_date):
+def control_for(run_id):
+    """The stop switch that begin_run made for this run. A run id with no switch left was stopped while it waited in line."""
+    if not run_id:
+        return RunControl()  # started without the page (for example through the API): nothing can stop it
+    control = CONTROLS.get(run_id)
+    if control is None:
+        control = RunControl()
+        control.stop()
+    return control
+
+
+def begin_run():
+    """Runs the moment a run button is clicked, before the queue: swap Analyze for Stop and make this run's stop switch."""
+    run_id = uuid.uuid4().hex
+    CONTROLS[run_id] = RunControl()
+    return gr.update(visible=False), gr.update(visible=True), gr.update(interactive=False), run_id
+
+
+def end_run(run_id):
+    CONTROLS.pop(run_id, None)
+    return gr.update(visible=True), gr.update(visible=False), gr.update(interactive=True)
+
+
+def stop_run(run_id):
+    """The Stop button. Kills the running step at once, from here, and puts the page back the way it was."""
+    control = CONTROLS.pop(run_id, None)
+    if control is None:
+        return (gr.skip(),) * 2 + (gr.skip(),) + end_run(run_id)  # nothing running: the run just finished
+    control.stop()
+    return (STOPPED_STATUS, "", gr.update(visible=False)) + end_run(run_id)
+
+
+def analyze(audio_path, participants, num_speakers, meeting_date, run_id):
     if not audio_path:
         raise gr.Error("Please upload a recording first.")
-    yield from stream_run(audio_path, participants, parse_speakers(num_speakers), parse_meeting_date(meeting_date), "")
+    yield from stream_run(
+        audio_path, participants, parse_speakers(num_speakers), parse_meeting_date(meeting_date), "", control_for(run_id)
+    )
 
 
 def on_upload(path, names, num):
@@ -224,7 +279,7 @@ def on_upload(path, names, num):
     return estimate_note(path), ("" if names == SAMPLE_PARTICIPANTS else names), ("" if str(num).strip() == str(SAMPLE_SPEAKERS) else num)
 
 
-def analyze_sample():
+def analyze_sample(run_id):
     """Fills the form and the audio player with the example too, so visitors can see and hear what it used."""
     fill = (SAMPLE_PARTICIPANTS, str(SAMPLE_SPEAKERS), SAMPLE_MEETING_DATE.isoformat(), str(SAMPLE_PLAYER), "")
     if config.SAMPLE_MODE == "cached":
@@ -241,12 +296,13 @@ def analyze_sample():
     banner = "▶️ **Live run** on the sample meeting."
     skip = (gr.skip(),) * len(fill)  # after the first update the inputs are already filled in
     for n, values in enumerate(
-        stream_run(str(source), SAMPLE_PARTICIPANTS, SAMPLE_SPEAKERS, SAMPLE_MEETING_DATE, banner)
+        stream_run(str(source), SAMPLE_PARTICIPANTS, SAMPLE_SPEAKERS, SAMPLE_MEETING_DATE, banner, control_for(run_id))
     ):
         yield (fill if n == 0 else skip) + values
 
 
 with gr.Blocks(title="MeetingMate", delete_cache=(3600, 3600)) as demo:
+    run_id = gr.State("")  # which run this page has going; the Stop button uses it to find that run's stop switch
     with gr.Column(elem_classes="mm-col"):
         gr.Markdown("# MeetingMate\nTurn a meeting recording into a task list: who owes what, by when.")
         audio = gr.Audio(sources=["upload"], type="filepath", label="Meeting recording")
@@ -271,6 +327,7 @@ with gr.Blocks(title="MeetingMate", delete_cache=(3600, 3600)) as demo:
             )
 
         analyze_btn = gr.Button("Analyze meeting", variant="primary", size="lg")
+        stop_btn = gr.Button("Stop analyzing", variant="stop", size="lg", visible=False)  # takes Analyze's place during a run
         status = gr.Markdown()
         banner = gr.Markdown()
 
@@ -279,7 +336,12 @@ with gr.Blocks(title="MeetingMate", delete_cache=(3600, 3600)) as demo:
             gr.Markdown(PRIVACY, elem_classes="mm-small")
 
     with gr.Column(visible=False, elem_classes="mm-col") as results:  # shown once a run finishes
+        summary_plain = gr.Textbox(visible="hidden")  # holds the plain-text summary for the copy button
+        with gr.Row():
+            gr.Markdown("### Summary")
+            copy_btn = gr.Button("Copy summary", size="sm", variant="secondary", scale=0, min_width=150)
         summary = gr.HTML()
+        counts = gr.HTML()
         gr.Markdown("### Action items")
         actions = gr.HTML()
         gr.Markdown("### Decisions")
@@ -293,7 +355,7 @@ with gr.Blocks(title="MeetingMate", delete_cache=(3600, 3600)) as demo:
             transcript = gr.Textbox(lines=15, max_lines=30, interactive=False, show_label=False, buttons=["copy"])
 
     OUTPUTS = [
-        status, banner, results, summary, actions, decisions, unassigned_head, unassigned, questions, transcript, csv_file,
+        status, banner, results, summary_plain, summary, counts, actions, decisions, unassigned_head, unassigned, questions, transcript, csv_file,
     ]
 
     demo.load(None, None, meeting_date, js=TODAY_JS)  # the server's clock may be in another time zone
@@ -302,8 +364,22 @@ with gr.Blocks(title="MeetingMate", delete_cache=(3600, 3600)) as demo:
         js=f"(d) => d === '{SAMPLE_MEETING_DATE.isoformat()}' ? ({TODAY_JS})() : d",
     )
     audio.clear(lambda: "", None, estimate)
-    analyze_btn.click(analyze, [audio, participants, num_speakers, meeting_date], OUTPUTS)
-    sample_btn.click(analyze_sample, None, [participants, num_speakers, meeting_date, audio, estimate] + OUTPUTS)
+    copy_btn.click(None, summary_plain, copy_btn, js=COPY_JS).then(None, None, copy_btn, js=RESET_COPY_JS)
+    # Each run button first swaps Analyze for Stop right away (queue=False, so it doesn't wait in line), then runs.
+    toggle = dict(queue=False, api_name=False)
+    analyze_run = analyze_btn.click(begin_run, None, [analyze_btn, stop_btn, sample_btn, run_id], **toggle).then(
+        analyze, [audio, participants, num_speakers, meeting_date, run_id], OUTPUTS
+    )
+    sample_run = sample_btn.click(begin_run, None, [analyze_btn, stop_btn, sample_btn, run_id], **toggle).then(
+        analyze_sample, [run_id], [participants, num_speakers, meeting_date, audio, estimate] + OUTPUTS
+    )
+    for run_event in (analyze_run, sample_run):
+        run_event.then(end_run, [run_id], [analyze_btn, stop_btn, sample_btn], **toggle)
+    # cancels also removes a run that is still waiting in line; the step that is running is killed by stop_run itself
+    stop_btn.click(
+        stop_run, [run_id], [status, banner, results, analyze_btn, stop_btn, sample_btn],
+        cancels=[analyze_run, sample_run], **toggle,
+    )
 
 demo.queue(max_size=5, default_concurrency_limit=1)  # one job at a time; the rest wait in line
 

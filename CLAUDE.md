@@ -14,9 +14,9 @@ Pipeline: Audio → Whisper + pyannote → labeled transcript → LLM → action
 
 ## Project structure
 
-- `meetingmate/` the pipeline as importable code: `transcribe.py` (Whisper + pyannote), `extract.py` (LLM), `pipeline.py` (both, with progress events and a timing log), `config.py` (local vs Space settings), `dates.py` (deadline phrase -> calendar date, in code), `quotes.py` (finds the transcript line behind an LLM quote), `render.py` (HTML tables and summary line)
+- `meetingmate/` the pipeline as importable code: `transcribe.py` (Whisper + pyannote), `extract.py` (LLM), `summarize.py` (separate LLM call for the meeting summary; kept apart because adding it to the extraction prompt made extraction worse), `pipeline.py` (both, with progress events and a timing log), `worker.py` (Whisper and pyannote run in a separate process so Stop can kill them mid-step; the LLM call can only be abandoned), `config.py` (local vs Space settings), `dates.py` (deadline phrase -> calendar date, in code), `quotes.py` (finds the transcript line behind an LLM quote), `render.py` (HTML tables and summary line)
 - `scripts/` command-line wrappers around `meetingmate/` (transcribe.py, extract.py), plus score.py, eval_diarization.py and generate_meeting.py (makes synthetic test audio with Kokoro TTS)
-- `tests/` plain-assert checks for dates and quotes: `.venv/bin/python tests/test_dates.py`
+- `tests/` plain-assert checks for dates and quotes: `.venv/bin/python tests/test_dates.py`; `tests/test_stop.py` stops a real run at each stage (slow, uses real models and the LLM)
 - `test_data/` meeting scripts, generated audio (`meeting_01.mp3` is the small copy the app plays and is committed; `*.wav` is gitignored), speaker timelines, and answer keys
 - `app/app.py` the Gradio app. Run with `.venv/bin/python app/app.py`. On a Space (`SPACE_ID` set) it caps audio at 10 minutes and shows cached sample results; override with `MEETINGMATE_MAX_AUDIO_MINUTES` and `MEETINGMATE_SAMPLE_MODE=live|cached`.
 - `logs/timings.jsonl` (gitignored) real per-step run times, used to check the wait estimates in `config.py`
