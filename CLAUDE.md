@@ -14,9 +14,10 @@ Pipeline: Audio → Whisper + pyannote → labeled transcript → LLM → action
 
 ## Project structure
 
-- `meetingmate/` the pipeline as importable code: `transcribe.py` (Whisper + pyannote), `extract.py` (LLM), `pipeline.py` (both, with progress events and a timing log), `config.py` (local vs Space settings)
+- `meetingmate/` the pipeline as importable code: `transcribe.py` (Whisper + pyannote), `extract.py` (LLM), `pipeline.py` (both, with progress events and a timing log), `config.py` (local vs Space settings), `dates.py` (deadline phrase -> calendar date, in code), `quotes.py` (finds the transcript line behind an LLM quote), `render.py` (HTML tables and summary line)
 - `scripts/` command-line wrappers around `meetingmate/` (transcribe.py, extract.py), plus score.py, eval_diarization.py and generate_meeting.py (makes synthetic test audio with Kokoro TTS)
-- `test_data/` meeting scripts, generated audio, speaker timelines, and answer keys
+- `tests/` plain-assert checks for dates and quotes: `.venv/bin/python tests/test_dates.py`
+- `test_data/` meeting scripts, generated audio (`meeting_01.mp3` is the small copy the app plays and is committed; `*.wav` is gitignored), speaker timelines, and answer keys
 - `app/app.py` the Gradio app. Run with `.venv/bin/python app/app.py`. On a Space (`SPACE_ID` set) it caps audio at 10 minutes and shows cached sample results; override with `MEETINGMATE_MAX_AUDIO_MINUTES` and `MEETINGMATE_SAMPLE_MODE=live|cached`.
 - `logs/timings.jsonl` (gitignored) real per-step run times, used to check the wait estimates in `config.py`
 
@@ -34,6 +35,7 @@ Pipeline: Audio → Whisper + pyannote → labeled transcript → LLM → action
 - **Participants:** pass `--participants "A,B,C"` to `extract.py`. It fixes misspelled names ("Mira" for "Meera"), names people who are never addressed, and corrects speaker label errors. Owners went from 2/5 to 4/5 and all 5 traps passed.
 - **LLM:** `openai/gpt-oss-120b` through HF Inference Providers. It beat `Qwen/Qwen3-235B-A22B-Instruct-2507`, which missed a task.
 - **Measure speakers word by word** with `scripts/eval_diarization.py`. Line-level accuracy hid merged turns and read about 13 points too high.
+- **The LLM copies deadline phrases as spoken; code turns them into dates** using the meeting date (the sample uses a fixed one, 2026-10-26). Quotes are checked against the transcript in code, and speaker and time come from the matched line.
 - **Keep the extraction prompt general.** Never put anything from the answer key in it. The trap keywords live in `scripts/score.py`.
 - One run per setup on one synthetic meeting, and LLM output varies between runs, so treat these numbers as rough.
 

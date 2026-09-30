@@ -1,50 +1,95 @@
 {
   "speaker_map": {
-    "SPEAKER_01": "Priya",
     "SPEAKER_00": "Rahul",
+    "SPEAKER_01": "Priya",
     "SPEAKER_02": "Arjun",
-    "SPEAKER_03": "unknown"
+    "SPEAKER_03": "Meera"
   },
   "decisions": [
-    "Launch date set to November 10th",
-    "Reward will be 200 rupees in app credit for both the referrer and the referee",
-    "Email campaign will be skipped for version 1"
+    {
+      "decision": "Launch date is moved to November 10th.",
+      "source": {
+        "quote": "Launch is now November 10th.",
+        "speaker": "Priya",
+        "time": 46.76
+      }
+    },
+    {
+      "decision": "Reward will be 200 rupees in app credit for both the referrer and the friend.",
+      "source": {
+        "quote": "that's decided 200 rupees in credit for both",
+        "speaker": "Priya",
+        "time": 78.96
+      }
+    },
+    {
+      "decision": "Skip email campaign for version 1 and focus on app promotion first.",
+      "source": {
+        "quote": "let's skip email for version 1 we'll see how an app promotion does first",
+        "speaker": "Priya",
+        "time": 126.42
+      }
+    }
   ],
   "action_items": [
     {
       "task": "Implement fraud check to block self‑referrals",
       "owner": "Arjun",
-      "deadline": "November 5th"
+      "deadline": "by November 5th",
+      "source": {
+        "quote": "Arjun, the fraud check to block self -referrals is yours.",
+        "speaker": "Priya",
+        "time": 56.26
+      }
     },
     {
       "task": "Finalize terms and conditions with legal",
       "owner": "Rahul",
-      "deadline": "this Friday"
+      "deadline": "by this Friday",
+      "source": {
+        "quote": "yes I'll have that done by this Friday",
+        "speaker": "Rahul",
+        "time": 90.02
+      }
     },
     {
-      "task": "Design share‑screen mock‑ups for the invite link",
-      "owner": "unknown",
-      "deadline": "next Wednesday"
+      "task": "Design share screen mock‑ups",
+      "owner": "Meera",
+      "deadline": "by next wednesday",
+      "source": {
+        "quote": "I can have mock -ups ready by next wednesday",
+        "speaker": "Meera",
+        "time": 93.16
+      }
     },
     {
       "task": "Write the FAQ page",
       "owner": "Priya",
-      "deadline": "November 7th"
+      "deadline": "by november 7th",
+      "source": {
+        "quote": "i'll write the faq page myself i'll have it done by november 7th",
+        "speaker": "Priya",
+        "time": 112.76
+      }
     },
     {
-      "task": "Send the updated launch plan to leadership",
+      "task": "Send updated launch plan to leadership",
       "owner": "Priya",
-      "deadline": "end of day today"
+      "deadline": "by end of day today",
+      "source": {
+        "quote": "I'll send the updated launch plan to leadership by end of day today",
+        "speaker": "Priya",
+        "time": 170.14
+      }
     }
   ],
   "unassigned_items": [
     {
-      "task": "Check whether the app store screenshots need updating",
-      "deadline": null
+      "task": "Check whether the app store screenshots need updating"
     }
   ],
   "open_questions": [
-    "Should the invite link be sent via WhatsApp or SMS?"
+    "Should the invite link go out through WhatsApp or SMS?"
   ],
   "model": "openai/gpt-oss-120b",
   "participants": [

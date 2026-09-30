@@ -11,6 +11,8 @@ from pathlib import Path
 from huggingface_hub import InferenceClient
 from pydantic import BaseModel, ConfigDict, ValidationError
 
+from .quotes import find_source
+
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_MODEL = "openai/gpt-oss-120b"
 UNKNOWN = "unknown"
@@ -30,20 +32,24 @@ Return a JSON object with these fields.
 2. decisions: things the group actually settled. Something is a decision only if the group
    clearly agreed or the person in charge clearly chose. Ideas floated, options compared, and
    topics postponed are not decisions. If a decision is changed later, report only the final version.
+   Each has decision and quote: the words, copied exactly, where it was settled.
 
 3. action_items: tasks that someone committed to do. Each has task, owner and deadline.
    - Count it only if a specific person accepted or volunteered for the task. A suggestion, a
      wish, or "we should..." is not a commitment.
    - If a task is offered to one person and someone else takes it, the owner is the person who took it.
    - If a task is cancelled or dropped later in the meeting, leave it out entirely.
-   - If a deadline is changed, use the latest one. Keep the deadline in the speaker's own words
-     (for example "Friday" or "end of day"); do not invent calendar dates you cannot know.
+   - If a deadline is changed, use the latest one. Copy the deadline exactly as it was spoken
+     (for example "by the 15th", "end of day", "after the review"). Never convert it to a calendar
+     date, never work out which day a weekday or "tomorrow" falls on, and never add words to it.
    - If a person committed but gave no deadline, use null.
    - owner is a real name from speaker_map, or "{UNKNOWN}" if you cannot tell.
+   - quote is the words, copied exactly, where the owner took the task on (or, if nobody did,
+     where it was agreed).
 
 4. unassigned_items: tasks that were mentioned as needing to be done, but nobody took them on
    (for example "someone should check..."). Do not repeat tasks that appear in action_items,
-   and do not include cancelled tasks. Each has task and deadline (null if none).
+   and do not include cancelled tasks. Each has task only.
 
 5. open_questions: questions or issues that were raised and left unresolved, including topics
    explicitly postponed. Do not include questions that were answered later.
@@ -52,6 +58,8 @@ General rules:
 - Use only what is in the transcript. Do not invent items, names, or deadlines.
 - One entry per real item. Do not split one task into several or repeat it.
 - Write each task or decision as a short, self-contained sentence.
+- A quote is one or two sentences at most, copied word for word from the transcript text. Leave
+  out the "[12s] SPEAKER_00:" prefix and never join lines or change any words.
 - Respond with the JSON object only.
 """
 
@@ -93,17 +101,18 @@ class SpeakerName(Model):
 
 class Decision(Model):
     decision: str
+    quote: str
 
 
 class ActionItem(Model):
     task: str
     owner: str
     deadline: str | None
+    quote: str
 
 
 class UnassignedItem(Model):
     task: str
-    deadline: str | None
 
 
 class Extraction(Model):
@@ -116,6 +125,14 @@ class Extraction(Model):
 
 def format_transcript(segments):
     return "\n".join(f"[{s['start']:.0f}s] {s['speaker']}: {s['text']}" for s in segments)
+
+
+def name_speakers(segments, speaker_map):
+    """Swap SPEAKER_00 for a real name where the model found one."""
+    def name(label):
+        found = speaker_map.get(label, UNKNOWN)
+        return label if found.lower() == UNKNOWN else found
+    return [{**s, "speaker": name(s["speaker"])} for s in segments]
 
 
 def parse_json(text):
@@ -167,7 +184,9 @@ def extract_to_dict(segments, model, token, participants=None):
     """extract() with the result flattened into plain dicts and lists, ready for JSON or a table."""
     result = extract(segments, model, token, participants).model_dump()
     result["speaker_map"] = {e["speaker"]: e["name"] for e in result["speaker_map"]}
-    result["decisions"] = [d["decision"] for d in result["decisions"]]
+    named = name_speakers(segments, result["speaker_map"])
+    for item in result["decisions"] + result["action_items"]:
+        item["source"] = find_source(item.pop("quote"), named)  # None when the quote isn't in the transcript
     result["model"] = model
     if participants:
         result["participants"] = participants

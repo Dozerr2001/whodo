@@ -98,6 +98,7 @@ def fmt_item(item):
 
 def score_file(path, key):
     ex = json.loads(path.read_text())
+    ex["decisions"] = [d if isinstance(d, str) else d["decision"] for d in ex["decisions"]]  # older files hold plain strings
     print("=" * 78)
     print(f"{path.name}  (model: {ex.get('model', '?')})")
     print("=" * 78)
@@ -142,7 +143,7 @@ def score_file(path, key):
     print("\nTRAPS")
     results = {}
     every_text = " ".join(
-        ex["decisions"] + [i["task"] + " " + (i["deadline"] or "") for i in got_items + got_un] + ex["open_questions"]
+        ex["decisions"] + [i["task"] + " " + (i.get("deadline") or "") for i in got_items + got_un] + ex["open_questions"]
     )
     for trap in key["traps"]:
         kind, check = trap["type"], TRAP_CHECKS.get(trap["type"], {})

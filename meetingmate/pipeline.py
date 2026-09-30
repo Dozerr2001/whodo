@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .config import SPEED_FACTORS
-from .extract import DEFAULT_MODEL, UNKNOWN, extract_to_dict
+from .extract import DEFAULT_MODEL, extract_to_dict, name_speakers
 from .transcribe import DEFAULT_DIARIZATION_MODEL, assign_speakers, diarize, load_audio, pick_device, transcribe
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -47,14 +47,6 @@ def estimate_seconds(audio_seconds, device=None):
     """Rough total run time for a recording of this length."""
     f = SPEED_FACTORS[device or pick_device()]
     return audio_seconds * (f["transcribe"] + f["diarize"]) + f["fixed"]
-
-
-def name_speakers(segments, speaker_map):
-    """Swap SPEAKER_00 for a real name where the model found one."""
-    def name(label):
-        found = speaker_map.get(label, UNKNOWN)
-        return label if found.lower() == UNKNOWN else found
-    return [{**s, "speaker": name(s["speaker"])} for s in segments]
 
 
 def _log_timing(audio_seconds, device, timings):
