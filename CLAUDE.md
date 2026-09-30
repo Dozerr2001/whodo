@@ -27,6 +27,15 @@ Pipeline: Audio → Whisper + pyannote → labeled transcript → LLM → action
 - `HF_TOKEN` lives in `.env`. Load it from there. Never print it, log it, or hardcode it.
 - When adding a package, add it to requirements.txt.
 
+## Best config so far (from meeting_01 experiments)
+
+- **Diarization:** `pyannote/speaker-diarization-community-1` with a speaker count hint (`--num-speakers`). Word-level accuracy is about 90% with the hint and 79% without. community-1 and 3.1 are about equal, so the hint is what matters.
+- **Participants:** pass `--participants "A,B,C"` to `extract.py`. It fixes misspelled names ("Mira" for "Meera"), names people who are never addressed, and corrects speaker label errors. Owners went from 2/5 to 4/5 and all 5 traps passed.
+- **LLM:** `openai/gpt-oss-120b` through HF Inference Providers. It beat `Qwen/Qwen3-235B-A22B-Instruct-2507`, which missed a task.
+- **Measure speakers word by word** with `scripts/eval_diarization.py`. Line-level accuracy hid merged turns and read about 13 points too high.
+- **Keep the extraction prompt general.** Never put anything from the answer key in it. The trap keywords live in `scripts/score.py`.
+- One run per setup on one synthetic meeting, and LLM output varies between runs, so treat these numbers as rough.
+
 ## v1 scope
 
 In: upload a recording, transcript with speaker labels, decisions, action items, open questions, unassigned items flagged, table plus CSV download.

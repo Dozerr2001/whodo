@@ -119,8 +119,8 @@ The answer key lists exactly what the app should and should not return.
 ## Status
 
 - [x] Synthetic meeting generator (Kokoro text-to-speech)
-- [ ] Transcription with speaker labels (Whisper + pyannote)
-- [ ] Action item extraction (LLM)
-- [ ] Scoring against the answer key
+- [x] Transcription with speaker labels (Whisper + pyannote)
+- [x] Action item extraction (LLM)
+- [x] Scoring against the answer key
 - [ ] App interface (Gradio)
 - [ ] Deploy to Hugging Face Spaces
