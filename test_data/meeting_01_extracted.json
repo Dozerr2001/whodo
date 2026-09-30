@@ -1,0 +1,49 @@
+{
+  "speaker_map": {
+    "SPEAKER_00": "unknown",
+    "SPEAKER_01": "Rahul",
+    "SPEAKER_02": "Arjun"
+  },
+  "decisions": [
+    "Launch date moved to November 10th",
+    "Reward will be 200 rupees in app credit for both referrer and friend",
+    "Email campaign will be skipped for version 1"
+  ],
+  "action_items": [
+    {
+      "task": "Implement fraud check to block self‑referrals",
+      "owner": "Arjun",
+      "deadline": "November 5th"
+    },
+    {
+      "task": "Finalize terms and conditions with legal",
+      "owner": "Rahul",
+      "deadline": "this Friday"
+    },
+    {
+      "task": "Create mock‑ups for the share‑screen invite link",
+      "owner": "unknown",
+      "deadline": "next Wednesday"
+    },
+    {
+      "task": "Write the FAQ page",
+      "owner": "unknown",
+      "deadline": "November 7th"
+    },
+    {
+      "task": "Send updated launch plan to leadership",
+      "owner": "unknown",
+      "deadline": "end of day today"
+    }
+  ],
+  "unassigned_items": [
+    {
+      "task": "Check whether the app store screenshots need updating",
+      "deadline": null
+    }
+  ],
+  "open_questions": [
+    "Which channel (WhatsApp or SMS) should be used for the invite link?"
+  ],
+  "model": "openai/gpt-oss-120b"
+}

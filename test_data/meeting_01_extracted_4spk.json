@@ -1,0 +1,49 @@
+{
+  "speaker_map": {
+    "SPEAKER_01": "unknown",
+    "SPEAKER_02": "Rahul",
+    "SPEAKER_03": "Arjun",
+    "SPEAKER_00": "Mira"
+  },
+  "decisions": [
+    "Launch date is set to November 10th.",
+    "Reward will be 200 rupees in app credit for both the referrer and the friend."
+  ],
+  "action_items": [
+    {
+      "task": "Implement fraud check to block self‑referrals",
+      "owner": "Arjun",
+      "deadline": "November 5th"
+    },
+    {
+      "task": "Finalize terms and conditions with legal",
+      "owner": "Rahul",
+      "deadline": "this Friday"
+    },
+    {
+      "task": "Create mock‑ups for the share screen",
+      "owner": "Mira",
+      "deadline": "next Wednesday"
+    },
+    {
+      "task": "Write the FAQ page",
+      "owner": "unknown",
+      "deadline": "November 7th"
+    },
+    {
+      "task": "Send the updated launch plan to leadership",
+      "owner": "unknown",
+      "deadline": "end of day today"
+    }
+  ],
+  "unassigned_items": [
+    {
+      "task": "Check whether the app store screenshots need updating",
+      "deadline": null
+    }
+  ],
+  "open_questions": [
+    "Decide whether the invite link should be sent via WhatsApp or SMS"
+  ],
+  "model": "openai/gpt-oss-120b"
+}

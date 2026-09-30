@@ -1,0 +1,45 @@
+{
+  "speaker_map": {
+    "SPEAKER_00": "unknown",
+    "SPEAKER_01": "Rahul",
+    "SPEAKER_02": "Arjun"
+  },
+  "decisions": [
+    "The referral program launch is moved to November 10th.",
+    "The reward will be 200 rupees in app credit for both the referrer and the referred friend.",
+    "Email campaign to existing users will be skipped for version 1."
+  ],
+  "action_items": [
+    {
+      "task": "Complete the fraud check to block self-referrals.",
+      "owner": "Arjun",
+      "deadline": "November 5th"
+    },
+    {
+      "task": "Finalize the terms and conditions for the referral program with legal.",
+      "owner": "Rahul",
+      "deadline": "this Friday"
+    },
+    {
+      "task": "Write the FAQ page for the referral program.",
+      "owner": "Mira",
+      "deadline": "November 7th"
+    },
+    {
+      "task": "Send the updated launch plan to leadership.",
+      "owner": "unknown",
+      "deadline": "end of day today"
+    }
+  ],
+  "unassigned_items": [
+    {
+      "task": "Check whether the app store screenshots need updating for the referral program.",
+      "deadline": null
+    }
+  ],
+  "open_questions": [
+    "Should the invite link go out through WhatsApp or SMS?",
+    "Do the app store screenshots need updating for the referral program?"
+  ],
+  "model": "Qwen/Qwen3-235B-A22B-Instruct-2507"
+}
