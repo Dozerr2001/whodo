@@ -154,26 +154,64 @@ def parse_json(text):
     return json.loads(fenced.group(1) if fenced else text)
 
 
+def _provider_message(error):
+    """The provider's own explanation of a 413 or 429 ("Limit 8000, Requested 9500"), or None.
+
+    Only for those two statuses: they say which limit was hit and carry no request content. The organization id is cut out.
+    """
+    response = getattr(error, "response", None)
+    if getattr(response, "status_code", None) not in (413, 429):
+        return None
+    try:
+        message = str(response.json()["error"]["message"])
+    except Exception:  # no body, not JSON, or a different shape
+        return None
+    return re.sub(r"org_\w+", "org_...", message)[:300]
+
+
 def _describe(error):
-    """Error type and HTTP status only, for the server log. Never the message, which can carry request details."""
+    """Error type and HTTP status for the server log, plus the provider's limit message for a 413 or 429.
+    Never any other message, which can carry request details."""
     status = getattr(getattr(error, "response", None), "status_code", None)
-    return type(error).__name__ + (f" {status}" if status else "")
+    text = type(error).__name__ + (f" {status}" if status else "")
+    message = _provider_message(error)
+    return f"{text}: {message}" if message else text
 
 
 RATE_LIMIT_RETRIES = 2
 RATE_LIMIT_DEFAULT_WAIT = 5  # seconds, when the provider does not say how long
-RATE_LIMIT_MAX_WAIT = 30  # a longer suggested wait is not worth holding a user for; fall back instead
+RATE_LIMIT_MAX_WAIT = 75  # a per-minute token limit needs most of a minute to refill; a longer wait means a daily limit, so fall back instead
+RESET_MARGIN = 1  # seconds added to the reset time Groq reports, so the retry lands just after the window refills
+
+
+def _seconds(text):
+    """Seconds from a duration like "7", "44.257s", "250ms" or "1m2.5s", or None if it is missing or unreadable."""
+    if text is None:
+        return None
+    match = re.fullmatch(r"\s*(?:(\d+(?:\.\d+)?)m(?!s))?\s*(?:(\d+(?:\.\d+)?)(ms|s)?)?\s*", str(text))
+    if not match or not any(match.groups()[:2]):
+        return None
+    minutes, number, unit = match.groups()
+    seconds = float(minutes or 0) * 60
+    if number:
+        seconds += float(number) / 1000 if unit == "ms" else float(number)
+    return seconds
 
 
 def _retry_wait(error):
-    """Seconds to wait before retrying a 429, or None if it is not a 429 or the wait is too long."""
+    """Seconds to wait before retrying a 429, or None if it is not a 429 or the wait is too long.
+
+    Uses the longer of retry-after and the time Groq says the token window takes to reset.
+    """
     response = getattr(error, "response", None)
     if getattr(response, "status_code", None) != 429:
         return None
-    try:
-        wait = float(response.headers.get("retry-after"))
-    except (AttributeError, TypeError, ValueError):
-        wait = RATE_LIMIT_DEFAULT_WAIT
+    headers = getattr(response, "headers", None) or {}
+    hints = [_seconds(headers.get("retry-after"))]
+    reset = _seconds(headers.get("x-ratelimit-reset-tokens"))
+    hints.append(reset + RESET_MARGIN if reset is not None else None)
+    hints = [h for h in hints if h is not None]
+    wait = max(hints) if hints else RATE_LIMIT_DEFAULT_WAIT
     return wait if wait <= RATE_LIMIT_MAX_WAIT else None
 
 
@@ -186,7 +224,7 @@ def chat(client, **kwargs):
             wait = _retry_wait(e)
             if wait is None or attempt == RATE_LIMIT_RETRIES:
                 raise
-            print(f"  rate limited (429); waiting {wait:g}s, retry {attempt + 1} of {RATE_LIMIT_RETRIES}")
+            print(f"  rate limited ({_describe(e)}); waiting {wait:g}s, retry {attempt + 1} of {RATE_LIMIT_RETRIES}")
             time.sleep(wait)
 
 

@@ -128,6 +128,48 @@ def test_429_with_a_very_long_wait_is_not_retried():
     assert sleeps == []
 
 
+class GroqLimit(Exception):
+    """A 429 or 413 shaped like Groq's: limit headers plus a JSON error body."""
+
+    def __init__(self, status=429, reset=None, retry_after=None, message="Limit 8000, Requested 9500"):
+        headers = {k: v for k, v in {"x-ratelimit-reset-tokens": reset, "retry-after": retry_after}.items() if v}
+        body = {"error": {"message": message}}
+        self.response = type("R", (), {"status_code": status, "headers": headers, "json": lambda self: body})()
+
+
+def test_429_waits_for_the_token_window_to_reset():
+    assert extract._retry_wait(GroqLimit(reset="44.257s")) == 44.257 + extract.RESET_MARGIN
+    assert extract._retry_wait(GroqLimit(reset="1m5s")) == 65 + extract.RESET_MARGIN  # minutes are understood
+    assert extract._retry_wait(GroqLimit(reset="3s", retry_after="20")) == 20  # the longer hint wins
+    assert extract._retry_wait(GroqLimit(reset="70s")) == 71  # still under the cap
+    assert extract._retry_wait(GroqLimit(reset="74.5s")) is None  # 75.5s with the margin: too long, fall back
+    assert extract._retry_wait(GroqLimit(reset="10m")) is None  # a daily limit is not worth waiting for
+    assert extract._retry_wait(GroqLimit()) == extract.RATE_LIMIT_DEFAULT_WAIT  # no hints at all
+    assert extract._retry_wait(GroqLimit(status=413)) is None  # only a 429 is retried
+
+
+def test_429_retry_sleeps_the_reset_time():
+    class Limited(Always429):
+        def chat_completion(self, **kwargs):
+            self.calls += 1
+            if self.calls > 1:
+                return FakeClient(0).chat_completion()
+            raise GroqLimit(reset="44.257s")
+
+    sleeps = _sleeps_during(lambda: extract.ask(Limited(), "m", [], extract.Extraction))
+    assert sleeps == [45.257]
+
+
+def test_log_line_has_the_limit_message_for_413_and_429_only():
+    line = extract._describe(GroqLimit(status=413, message="Request too large for org_01abc23 on TPM: Limit 8000, Requested 9500"))
+    assert line.startswith("GroqLimit 413: ") and "Limit 8000, Requested 9500" in line
+    assert "org_01abc23" not in line  # the organization id is cut out
+    assert "429: Limit 8000" in extract._describe(GroqLimit(status=429))
+    assert extract._describe(FakeHTTPError("secret-token-value")) == "FakeHTTPError 402"  # other statuses: type and status only
+    assert extract._describe(ValueError("secret-token-value")) == "ValueError"
+    assert len(extract._describe(GroqLimit(message="x" * 1000))) < 340  # a long message is cut
+
+
 def test_fallback_without_schema_still_works():
     client = FakeClient(fail=1)
     assert extract.ask(client, "m", [], extract.Extraction) == "{}" and client.calls == 2
