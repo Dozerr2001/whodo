@@ -10,9 +10,9 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 os.environ.setdefault("HF_TOKEN", "not-a-real-token")
 
-from meetingmate import config, extract, pipeline, summarize  # noqa: E402
-from meetingmate.extract import LLM_UNAVAILABLE, ExtractionError, LLMUnavailable  # noqa: E402
-from meetingmate.render import summary_block, summary_text  # noqa: E402
+from whodo import config, extract, pipeline, summarize  # noqa: E402
+from whodo.extract import LLM_UNAVAILABLE, ExtractionError, LLMUnavailable  # noqa: E402
+from whodo.render import summary_block, summary_text  # noqa: E402
 
 MESSAGE = "The AI service is temporarily unavailable. Try the example instead."
 

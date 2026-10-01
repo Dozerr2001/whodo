@@ -1,11 +1,11 @@
-"""Checks for meetingmate/quotes.py. Run with: .venv/bin/python tests/test_quotes.py"""
+"""Checks for whodo/quotes.py. Run with: .venv/bin/python tests/test_quotes.py"""
 
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from meetingmate.quotes import find_source  # noqa: E402
+from whodo.quotes import find_source  # noqa: E402
 
 SEGMENTS = [
     {"speaker": "Priya", "start": 0.0, "text": "Okay, let's get started."},

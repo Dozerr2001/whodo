@@ -5,7 +5,7 @@ Usage:
     .venv/bin/python scripts/transcribe.py test_data/meeting_01.wav -o out.json
 
 Steps: Whisper (what was said) + pyannote (who spoke when) -> merged segments.
-The logic lives in meetingmate/transcribe.py; this is just the command line.
+The logic lives in whodo/transcribe.py; this is just the command line.
 """
 
 import argparse
@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 # Re-exported so other scripts (eval_diarization.py) can keep importing from here.
-from meetingmate.transcribe import (  # noqa: E402, F401
+from whodo.transcribe import (  # noqa: E402, F401
     DEFAULT_DIARIZATION_MODEL,
     DIARIZATION_MODELS,
     ROOT,

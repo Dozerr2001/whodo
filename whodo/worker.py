@@ -4,7 +4,7 @@ A Python thread can't be interrupted, and Whisper and pyannote each block for mi
 process can be killed at any moment. One worker stays alive between runs, so the models stay loaded;
 only after a kill does the next run pay to start a new one and reload them.
 
-The child is started with `python -m meetingmate.worker` (not multiprocessing's "spawn", which would
+The child is started with `python -m whodo.worker` (not multiprocessing's "spawn", which would
 re-import the whole app in the child). It talks to the parent over two pipes, and the parent starts
 it in its own process group so one SIGKILL takes down anything it started.
 """
@@ -108,7 +108,7 @@ class Worker:
         job_r, job_w = os.pipe()
         result_r, result_w = os.pipe()
         self._proc = subprocess.Popen(
-            [sys.executable, "-m", "meetingmate.worker", str(job_r), str(result_w)],
+            [sys.executable, "-m", "whodo.worker", str(job_r), str(result_w)],
             cwd=ROOT, pass_fds=(job_r, result_w), stdin=subprocess.DEVNULL, start_new_session=True,
         )
         os.close(job_r)

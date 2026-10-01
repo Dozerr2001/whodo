@@ -11,7 +11,7 @@ spec = importlib.util.spec_from_file_location("score", ROOT / "scripts" / "score
 score = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(score)
 
-from meetingmate import extract, summarize  # noqa: E402
+from whodo import extract, summarize  # noqa: E402
 
 EX = {
     "speaker_map": {}, "participants": ["Ana", "Ben", "Cy"], "decisions": [{"decision": "Ship on May 2"}],

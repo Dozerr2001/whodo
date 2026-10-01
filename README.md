@@ -1,4 +1,6 @@
-# MeetingMate
+# WhoDo
+
+**Turn a meeting recording into who does what, by when.**
 
 Upload a meeting recording, get back the decisions made, the action items with owners and deadlines, and the questions still left open.
 
@@ -12,7 +14,7 @@ Chiefs of staff, project managers, and team leads who run recurring meetings and
 
 ## How it works
 
-MeetingMate runs on three pieces:
+WhoDo runs on three pieces:
 
 1. **Whisper** turns speech into text. *What was said.*
 2. **pyannote** figures out who spoke when. *Who said it.*
@@ -47,7 +49,7 @@ Tested against meetings where the correct answers are known. Targets:
 ## Project structure
 
 ```
-MeetingMate/
+WhoDo/
 ├── app/                  the app itself (coming soon)
 ├── docs/
 │   └── brief.md          project brief

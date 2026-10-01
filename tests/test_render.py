@@ -1,11 +1,11 @@
-"""Checks for the summary parts of meetingmate/render.py. Run with: .venv/bin/python tests/test_render.py"""
+"""Checks for the summary parts of whodo/render.py. Run with: .venv/bin/python tests/test_render.py"""
 
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from meetingmate.render import summary_block, summary_text  # noqa: E402
+from whodo.render import summary_block, summary_text  # noqa: E402
 
 EX = {
     "summary": {

@@ -1,4 +1,4 @@
-"""MeetingMate web app: upload a meeting recording, get decisions, action items and open questions.
+"""WhoDo web app: upload a meeting recording, get decisions, action items and open questions.
 
 Run locally:  .venv/bin/python app/app.py
 """
@@ -18,13 +18,13 @@ from dotenv import load_dotenv
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from meetingmate import config  # noqa: E402
-from meetingmate import render  # noqa: E402
-from meetingmate.extract import LLM_UNAVAILABLE, LLMUnavailable, name_speakers  # noqa: E402
-from meetingmate.pipeline import Progress, estimate_seconds, load_cached, run  # noqa: E402
-from meetingmate.render import fmt_duration  # noqa: E402
-from meetingmate.transcribe import pick_device  # noqa: E402
-from meetingmate.worker import RunControl, Stopped  # noqa: E402
+from whodo import config  # noqa: E402
+from whodo import render  # noqa: E402
+from whodo.extract import LLM_UNAVAILABLE, LLMUnavailable, name_speakers  # noqa: E402
+from whodo.pipeline import Progress, estimate_seconds, load_cached, run  # noqa: E402
+from whodo.render import fmt_duration  # noqa: E402
+from whodo.transcribe import pick_device  # noqa: E402
+from whodo.worker import RunControl, Stopped  # noqa: E402
 
 load_dotenv(ROOT / ".env")  # does nothing on a Space, where HF_TOKEN is a secret env var
 
@@ -63,7 +63,7 @@ PRIVACY_SHORT = (
 PRIVACY = """\
 **Privacy.** Your recording is processed on this server. The transcript text is then sent to a third-party \
 language model through Hugging Face Inference Providers to pull out the action items. Uploaded files are \
-deleted from the server within about an hour, and MeetingMate keeps no copy of your audio or transcript. \
+deleted from the server within about an hour, and WhoDo keeps no copy of your audio or transcript. \
 Don't upload confidential meetings to a public demo."""
 
 UNASSIGNED_HEAD = "### Unassigned items\nMentioned as needing to be done, but nobody took them on."
@@ -168,7 +168,7 @@ def build_csv(ex, anchor):
         + [csv_row("unassigned", i["task"], render.NEEDS_OWNER) for i in ex["unassigned_items"]]
         + [csv_row("open question", q) for q in ex["open_questions"]]
     )
-    path = Path(tempfile.mkdtemp()) / "meetingmate_results.csv"
+    path = Path(tempfile.mkdtemp()) / "whodo_results.csv"
     pd.DataFrame(rows, columns=CSV_COLUMNS).to_csv(path, index=False)
     return str(path)
 
@@ -314,10 +314,10 @@ def analyze_sample(run_id):
         yield (fill if n == 0 else skip) + values
 
 
-with gr.Blocks(title="MeetingMate", delete_cache=(3600, 3600)) as demo:
+with gr.Blocks(title="WhoDo", delete_cache=(3600, 3600)) as demo:
     run_id = gr.State("")  # which run this page has going; the Stop button uses it to find that run's stop switch
     with gr.Column(elem_classes="mm-col"):
-        gr.Markdown("# MeetingMate\nTurn a meeting recording into a task list: who owes what, by when.")
+        gr.Markdown("# WhoDo\nTurn a meeting recording into who does what, by when.")
         audio = gr.Audio(sources=["upload"], type="filepath", label="Meeting recording")
         estimate = gr.Markdown()
         sample_btn = gr.Button("No recording handy? See an example", variant="secondary", size="sm", elem_classes="mm-link")

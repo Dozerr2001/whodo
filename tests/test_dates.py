@@ -1,4 +1,4 @@
-"""Checks for meetingmate/dates.py. Run with: .venv/bin/python tests/test_dates.py"""
+"""Checks for whodo/dates.py. Run with: .venv/bin/python tests/test_dates.py"""
 
 import sys
 from datetime import date
@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from meetingmate.dates import resolve_deadline  # noqa: E402
+from whodo.dates import resolve_deadline  # noqa: E402
 
 WED = date(2026, 9, 30)  # a Wednesday
 FRI = date(2026, 10, 2)

@@ -1,8 +1,8 @@
-# MeetingMate - context for Claude
+# WhoDo - context for Claude
 
 ## What this project is
 
-MeetingMate takes a meeting recording and returns decisions, action items (task, owner, deadline), and open questions. It is a learning project: the goal is to learn how to build and ship AI products using models from Hugging Face, ending with a public app on Hugging Face Spaces.
+WhoDo takes a meeting recording and returns decisions, action items (task, owner, deadline), and open questions. It is a learning project: the goal is to learn how to build and ship AI products using models from Hugging Face, ending with a public app on Hugging Face Spaces.
 
 ## How it works
 
@@ -14,11 +14,11 @@ Pipeline: Audio → Whisper + pyannote → labeled transcript → LLM → action
 
 ## Project structure
 
-- `meetingmate/` the pipeline as importable code: `transcribe.py` (Whisper + pyannote), `extract.py` (LLM), `summarize.py` (separate LLM call for the meeting summary; kept apart because adding it to the extraction prompt made extraction worse), `pipeline.py` (both, with progress events and a timing log), `worker.py` (Whisper and pyannote run in a separate process so Stop can kill them mid-step; the LLM call can only be abandoned), `config.py` (local vs Space settings), `dates.py` (deadline phrase -> calendar date, in code), `quotes.py` (finds the transcript line behind an LLM quote), `render.py` (HTML tables and summary line)
-- `scripts/` command-line wrappers around `meetingmate/` (transcribe.py, extract.py), plus score.py, eval_diarization.py and generate_meeting.py (makes synthetic test audio with Kokoro TTS)
+- `whodo/` the pipeline as importable code: `transcribe.py` (Whisper + pyannote), `extract.py` (LLM), `summarize.py` (separate LLM call for the meeting summary; kept apart because adding it to the extraction prompt made extraction worse), `pipeline.py` (both, with progress events and a timing log), `worker.py` (Whisper and pyannote run in a separate process so Stop can kill them mid-step; the LLM call can only be abandoned), `config.py` (local vs Space settings), `dates.py` (deadline phrase -> calendar date, in code), `quotes.py` (finds the transcript line behind an LLM quote), `render.py` (HTML tables and summary line)
+- `scripts/` command-line wrappers around `whodo/` (transcribe.py, extract.py), plus score.py, eval_diarization.py and generate_meeting.py (makes synthetic test audio with Kokoro TTS)
 - `tests/` plain-assert checks for dates and quotes: `.venv/bin/python tests/test_dates.py`; `tests/test_stop.py` stops a real run at each stage (slow, uses real models and the LLM)
 - `test_data/` meeting scripts, generated audio (`meeting_01.mp3` is the small copy the app plays and is committed; `*.wav` is gitignored), speaker timelines, and answer keys
-- `app/app.py` the Gradio app. Run with `.venv/bin/python app/app.py`. On a Space (`SPACE_ID` set) it caps audio at 10 minutes and shows cached sample results; override with `MEETINGMATE_MAX_AUDIO_MINUTES` and `MEETINGMATE_SAMPLE_MODE=live|cached`.
+- `app/app.py` the Gradio app. Run with `.venv/bin/python app/app.py`. On a Space (`SPACE_ID` set) it caps audio at 10 minutes and shows cached sample results; override with `WHODO_MAX_AUDIO_MINUTES` and `WHODO_SAMPLE_MODE=live|cached`.
 - `logs/timings.jsonl` (gitignored) real per-step run times, used to check the wait estimates in `config.py`
 
 ## Environment notes
@@ -36,7 +36,7 @@ Pipeline: Audio → Whisper + pyannote → labeled transcript → LLM → action
 - **LLM:** `openai/gpt-oss-120b` through Groq (`GROQ_API_KEY` in `.env`), falling back to HF Inference Providers. It beat `Qwen/Qwen3-235B-A22B-Instruct-2507`, which missed a task.
 - **Measure speakers word by word** with `scripts/eval_diarization.py`. Line-level accuracy hid merged turns and read about 13 points too high.
 - **The LLM copies deadline phrases as spoken; code turns them into dates** using the meeting date (the sample uses a fixed one, 2026-10-26). Quotes are checked against the transcript in code, and speaker and time come from the matched line.
-- **Dev mode saves credits.** `MEETINGMATE_DEV_LLM=saved` keeps the real Whisper and pyannote steps but uses the saved sample results instead of calling the LLM (`outage` and `summary-outage` simulate a failed LLM or summary, to see the error messages). Ignored on a Space. A failed LLM call shows "The AI service is temporarily unavailable. Try the example instead."; a failed summary shows a notice above the results.
+- **Dev mode saves credits.** `WHODO_DEV_LLM=saved` keeps the real Whisper and pyannote steps but uses the saved sample results instead of calling the LLM (`outage` and `summary-outage` simulate a failed LLM or summary, to see the error messages). Ignored on a Space. A failed LLM call shows "The AI service is temporarily unavailable. Try the example instead."; a failed summary shows a notice above the results.
 - **Keep the extraction prompt general.** Never put anything from the answer key in it. The trap keywords live in `scripts/score.py`.
 - One run per setup on one synthetic meeting, and LLM output varies between runs, so treat these numbers as rough.
 

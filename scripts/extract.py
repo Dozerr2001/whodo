@@ -6,7 +6,7 @@ Usage:
 
 Reads the output of transcribe.py and asks an open model on Hugging Face
 Inference Providers to return structured JSON.
-The logic lives in meetingmate/extract.py; this is just the command line.
+The logic lives in whodo/extract.py; this is just the command line.
 """
 
 import argparse
@@ -20,8 +20,8 @@ from dotenv import load_dotenv
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from meetingmate.extract import DEFAULT_MODEL, ExtractionError, default_output  # noqa: E402
-from meetingmate.summarize import extract_with_summary  # noqa: E402
+from whodo.extract import DEFAULT_MODEL, ExtractionError, default_output  # noqa: E402
+from whodo.summarize import extract_with_summary  # noqa: E402
 
 
 def main():

@@ -30,8 +30,8 @@ sys.path.insert(0, str(ROOT / "tests"))
 load_dotenv(ROOT / ".env")
 
 import fake_llm  # noqa: E402  (tests/fake_llm.py)
-from meetingmate.pipeline import Progress, Result, run  # noqa: E402
-from meetingmate.worker import WORKER, RunControl, Stopped  # noqa: E402
+from whodo.pipeline import Progress, Result, run  # noqa: E402
+from whodo.worker import WORKER, RunControl, Stopped  # noqa: E402
 
 AUDIO = ROOT / "test_data" / "meeting_01.mp3"
 TOKEN = os.environ["HF_TOKEN"]
@@ -43,7 +43,7 @@ fake_llm.mode.update(kind="slow", delay=10.0)  # an LLM call that takes 10s, so 
 
 
 def leftover_dirs():
-    return glob.glob(os.path.join(tempfile.gettempdir(), "meetingmate_*"))
+    return glob.glob(os.path.join(tempfile.gettempdir(), "whodo_*"))
 
 
 def stop_during(step):

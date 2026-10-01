@@ -1,14 +1,14 @@
 """A stand-in for the LLM calls, so stop tests don't spend Inference Provider credits or depend on the network.
 
-install() replaces ask_structured in meetingmate.extract and meetingmate.summarize.
+install() replaces ask_structured in whodo.extract and whodo.summarize.
   mode "instant": answers at once with an empty but valid result.
   mode "slow":    waits `delay` seconds, then answers (a stop during the wait must not lead to a second call).
 """
 
 import time
 
-import meetingmate.extract
-import meetingmate.summarize
+import whodo.extract
+import whodo.summarize
 
 calls = []
 mode = {"kind": "instant", "delay": 0.0}
@@ -27,5 +27,5 @@ def fake_ask_structured(token, model, rules, transcript_text, schema_model):
 
 
 def install():
-    meetingmate.extract.ask_structured = fake_ask_structured
-    meetingmate.summarize.ask_structured = fake_ask_structured
+    whodo.extract.ask_structured = fake_ask_structured
+    whodo.summarize.ask_structured = fake_ask_structured

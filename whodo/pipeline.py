@@ -25,7 +25,7 @@ from .worker import WORKER, RunControl, WorkerDied
 
 ROOT = Path(__file__).resolve().parent.parent
 DEV_SAVED_RESULT = ROOT / "test_data" / "meeting_01_extracted_cc1_4spk_participants.json"
-TIMING_LOG = Path(os.environ.get("MEETINGMATE_LOG_DIR", ROOT / "logs")) / "timings.jsonl"
+TIMING_LOG = Path(os.environ.get("WHODO_LOG_DIR", ROOT / "logs")) / "timings.jsonl"
 TICK_SECONDS = 2.0  # how often a Progress event goes out
 STOP_POLL_SECONDS = 0.1  # how often a run looks at its stop switch
 
@@ -140,7 +140,7 @@ def run(audio_path, token, participants=None, num_speakers=None,
     device = pick_device()
     audio_seconds = sf.info(str(audio_path)).duration
     timings = {}
-    workdir = tempfile.mkdtemp(prefix="meetingmate_")  # the worker's scratch space, deleted however the run ends
+    workdir = tempfile.mkdtemp(prefix="whodo_")  # the worker's scratch space, deleted however the run ends
     finished = False
     proc = None
     worker_busy = [True]  # True from submit until the worker has sent everything. Only a busy worker is worth killing.
