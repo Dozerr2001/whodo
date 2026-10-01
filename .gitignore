@@ -5,3 +5,6 @@
 __pycache__/
 
 logs/
+
+# Someone else's recording, large; never commit
+test_data/gitlab_meeting.mp3
