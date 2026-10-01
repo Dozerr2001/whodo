@@ -4,6 +4,8 @@ This is a separate LLM call from extract.py. Asking one call to extract tasks an
 made both worse, so each gets its own prompt. The tables come from extract.py; this explains the why.
 """
 
+import re
+
 from .extract import (
     DEFAULT_MODEL, LLM_UNAVAILABLE, LLMUnavailable, Model, ask_structured, extract_to_dict, format_transcript, name_speakers,
 )
@@ -37,9 +39,15 @@ Rules:
   or decided. Report decisions only when someone clearly made them.
 - Say only what was said. Do not interpret, judge, or fill in. Do not call something dropped,
   cancelled, postponed or unnecessary unless someone said so.
+- The established facts (action items with owners, decisions, unassigned items, open questions) were
+  already extracted and are the source of truth. Never contradict them: do not name a different owner
+  for a task, do not say a task was dropped, skipped or no longer needed when it is listed as an action
+  item, do not give anyone an item listed as unassigned, and do not call an open question settled. If
+  the transcript seems to disagree with the facts, leave that point out of the summary.
 - Action items are shown in a separate table. Do not list who will do what or by when, and do not make
   a topic out of task assignments, wrap-up or goodbyes. Mention a task only when it is the reason
   behind an outcome.
+- Use quotation marks only around words copied exactly from the transcript. Paraphrase without them.
 - No filler such as "a productive discussion". Keep every part short. A short meeting gives a short
   summary and a long meeting a longer one, with more topics.
 - start_quote is copied word for word from the transcript text, without the "[12s] Name:" prefix.
@@ -68,10 +76,42 @@ def minutes_long(segments):
     return max(1, round(max((s.get("end", s["start"]) for s in segments), default=0) / 60))
 
 
-def summarize(named_segments, model, token):
-    """named_segments have real names in the speaker field. Returns {"overview", "topics"}; each topic gets a start time."""
-    text = f"The meeting is about {minutes_long(named_segments)} minutes long.\n\nTranscript:\n\n{format_transcript(named_segments)}"
+def facts_text(extraction):
+    """The extraction as plain text, to hand the summary call as the source of truth."""
+    def bullets(lines):
+        return "\n".join(f"- {x}" for x in lines) or "- none"
+
+    actions = [f"{i['task']} (owner: {i['owner']}, deadline: {i['deadline'] or 'none'})" for i in extraction["action_items"]]
+    decisions = [d["decision"] for d in extraction["decisions"]]
+    unassigned = [i["task"] for i in extraction["unassigned_items"]]
+    return (
+        "Established facts (already extracted; the summary must not contradict them)\n\n"
+        f"Action items:\n{bullets(actions)}\n\nDecisions:\n{bullets(decisions)}\n\n"
+        f"Unassigned items (nobody took them):\n{bullets(unassigned)}\n\nOpen questions (not settled):\n{bullets(extraction['open_questions'])}"
+    )
+
+
+QUOTED = re.compile(r'["\u201c]([^"\u201c\u201d]+)["\u201d]')
+
+
+def unquote_paraphrases(text, named_segments):
+    """Keep quotation marks only around words found in the transcript; drop them from anything else."""
+    return QUOTED.sub(lambda m: m.group(0) if find_source(m.group(1), named_segments) else m.group(1), text)
+
+
+def summarize(named_segments, model, token, extraction):
+    """named_segments have real names in the speaker field; extraction is the finished extract_to_dict() result.
+    Returns {"overview", "topics"}; each topic gets a start time."""
+    text = (
+        f"The meeting is about {minutes_long(named_segments)} minutes long.\n\n{facts_text(extraction)}\n\n"
+        f"Transcript:\n\n{format_transcript(named_segments)}"
+    )
     summary = ask_structured(token, model, INSTRUCTIONS, text, Summary).model_dump()
+    summary["overview"] = unquote_paraphrases(summary["overview"], named_segments)
+    for topic in summary["topics"]:
+        for field in ("discussed", "outcome_reasoning"):
+            topic[field] = unquote_paraphrases(topic[field], named_segments)
+        topic["options_considered"] = [unquote_paraphrases(o, named_segments) for o in topic["options_considered"]]
     for topic in summary["topics"]:  # the model copies the opening words; code finds the real timestamp
         found = find_source(topic.pop("start_quote"), named_segments)
         topic["start"] = found["time"] if found else None
@@ -90,7 +130,7 @@ def extract_with_summary(segments, model=DEFAULT_MODEL, token=None, participants
     if stopped and stopped():
         return result
     try:
-        result["summary"] = summarize(name_speakers(segments, result["speaker_map"]), model, token)
+        result["summary"] = summarize(name_speakers(segments, result["speaker_map"]), model, token, result)
     except LLMUnavailable:
         result["summary_error"] = SUMMARY_UNAVAILABLE
     except Exception as e:  # e.g. the model's answer was unusable twice

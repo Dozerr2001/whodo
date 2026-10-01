@@ -76,6 +76,58 @@ def test_groq_is_first_only_when_key_is_set():
             os.environ["GROQ_API_KEY"] = saved
 
 
+class RateLimited(Exception):
+    def __init__(self, retry_after=None):
+        headers = {"retry-after": retry_after} if retry_after else {}
+        self.response = type("R", (), {"status_code": 429, "headers": headers})()
+
+
+class Always429:
+    def __init__(self, retry_after=None, succeed_after=None):
+        self.retry_after, self.succeed_after, self.calls = retry_after, succeed_after, 0
+
+    def chat_completion(self, **kwargs):
+        self.calls += 1
+        if self.succeed_after is not None and self.calls > self.succeed_after:
+            return FakeClient(0).chat_completion()
+        raise RateLimited(self.retry_after)
+
+
+def _sleeps_during(fn):
+    sleeps, original = [], extract.time.sleep
+    extract.time.sleep = sleeps.append
+    try:
+        fn()
+    finally:
+        extract.time.sleep = original
+    return sleeps
+
+
+def _expect_unavailable(client):
+    try:
+        extract.ask(client, "m", [], extract.Extraction)
+    except LLMUnavailable:
+        return
+    raise AssertionError("expected LLMUnavailable")
+
+
+def test_429_waits_for_retry_after_then_succeeds():
+    client = Always429("7", succeed_after=2)
+    sleeps = _sleeps_during(lambda: extract.ask(client, "m", [], extract.Extraction))
+    assert sleeps == [7.0, 7.0] and client.calls == 3  # two waits, success on the third try
+
+
+def test_429_without_hint_waits_a_few_seconds_and_gives_up_after_two_retries():
+    client = Always429()
+    sleeps = _sleeps_during(lambda: _expect_unavailable(client))
+    assert sleeps == [extract.RATE_LIMIT_DEFAULT_WAIT] * 4 and client.calls == 6  # 3 tries each for schema, then prompt only
+
+
+def test_429_with_a_very_long_wait_is_not_retried():
+    sleeps = _sleeps_during(lambda: _expect_unavailable(Always429("600")))
+    assert sleeps == []
+
+
 def test_fallback_without_schema_still_works():
     client = FakeClient(fail=1)
     assert extract.ask(client, "m", [], extract.Extraction) == "{}" and client.calls == 2

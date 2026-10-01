@@ -96,6 +96,68 @@ def fmt_item(item):
     return f"{item['task']} [{owner}, {item.get('deadline') or 'no deadline'}]"
 
 
+# Words that say a task was dropped, and phrases that hand a task to a person. Used only by check_summary.
+DROP_WORDS = re.compile(
+    r"\b(?:dropp?ed|drop|forgo|forgone|forego|skipp?ed|skip|cancel\w*|scrapp?ed|abandon\w*|no longer|not needed|unnecessary|"
+    r"less important|not doing|won't|will not|instead of|without)\b", re.I)
+ASSIGN_AFTER_NAME = r"(?:\w+\W+){0,2}?(?:will|would|agreed to|decided to|promised|committed|volunteer\w*|took|takes|owns?|handles?|responsible)\b"
+
+
+def summary_texts(summary):
+    texts = [summary.get("overview", "")]
+    for topic in summary.get("topics", []):
+        texts += [topic.get("discussed", ""), topic.get("outcome_reasoning", "")] + list(topic.get("options_considered", []))
+    return [t.replace("\u2011", "-") for t in texts if t]
+
+
+def task_words(text):
+    return {w for w in words(re.sub(r"(?<=\w)-(?=\w)", "", text or "")) if len(w) >= 4}
+
+
+def check_summary(ex):
+    """Flag summary statements that disagree with the extraction: a task given to someone who is not its owner
+    (including an unassigned item given to anyone), or a listed task called dropped. A word-matching
+    heuristic, so read the flags by eye; it can miss paraphrases and sometimes flags a fair sentence.
+    Returns a list of (statement, reason)."""
+    summary = ex.get("summary")
+    if not summary:
+        return []
+    tasks = [(i["task"], i["owner"]) for i in ex["action_items"]] + [(i["task"], None) for i in ex["unassigned_items"]]
+    word_sets = [task_words(t) for t, _ in tasks]
+    names = {n for n in list(ex.get("speaker_map", {}).values()) + [o for _, o in tasks if o] + list(ex.get("participants", []))
+             if n and n.lower() != "unknown"}
+    name_re = "|".join(re.escape(n) for n in sorted(names, key=len, reverse=True))
+
+    def about(text, k):
+        """Is this text about task k: two words in common, or one word only this task has."""
+        others = set().union(*(w for j, w in enumerate(word_sets) if j != k)) if len(word_sets) > 1 else set()
+        shared = task_words(text) & word_sets[k]
+        return len(shared) >= 2 or bool(shared - others)
+
+    flags = []
+    for text in summary_texts(summary):
+        for sentence in re.split(r"(?<=\.)\s+", text):
+            # who is handed what: each "Name will/agreed to/took ..." up to the next name
+            for m in re.finditer(rf"\b({name_re})\b\W+{ASSIGN_AFTER_NAME}", sentence, re.I) if names else []:
+                span = re.split(rf"\b(?:{name_re})\b", sentence[m.end():], maxsplit=1, flags=re.I)[0]
+                for k, (task, owner) in enumerate(tasks):
+                    # "agreed to look into it": the task is whatever the sentence was talking about before
+                    related = about(span, k) or (re.search(r"\b(?:it|this|that|them)\b", span, re.I) and about(sentence[: m.start()], k))
+                    if related and not same_person(m.group(1), owner):
+                        flags.append((sentence, f"gives '{task}' to {m.group(1)}, but the extraction says {owner or 'nobody (unassigned)'}"))
+            for m in re.finditer(rf"\b(?:assigned|given|handed) to ({name_re})\b", sentence, re.I) if names else []:
+                for k, (task, owner) in enumerate(tasks):
+                    if about(sentence, k) and not same_person(m.group(1), owner):
+                        flags.append((sentence, f"gives '{task}' to {m.group(1)}, but the extraction says {owner or 'nobody (unassigned)'}"))
+            # dropped tasks, clause by clause so "Ana wrote the FAQ and dropped the demo" only blames the demo
+            for clause in re.split(r"[,;]|\band\b|\bbut\b", sentence):
+                if DROP_WORDS.search(clause):
+                    for k, (task, owner) in enumerate(tasks):
+                        if owner and about(clause, k):
+                            flags.append((clause.strip(), f"calls '{task}' dropped, but it is an action item for {owner}"))
+    return list(dict.fromkeys(flags))
+
+
 def score_file(path, key):
     ex = json.loads(path.read_text())
     ex["decisions"] = [d if isinstance(d, str) else d["decision"] for d in ex["decisions"]]  # older files hold plain strings
@@ -170,8 +232,18 @@ def score_file(path, key):
         results[kind] = passed
         print(f" {'PASS' if passed else 'FAIL'}  {kind}: {trap['detail']}" + ("" if passed else f"\n        -> {'; '.join(why)}"))
 
+    flags = check_summary(ex)
+    print("\nSUMMARY CONSISTENCY  (does the summary contradict the extraction?)")
+    if not ex.get("summary"):
+        print("   no summary in this file")
+    elif not flags:
+        print("   PASS  no owner or dropped-task statement disagrees with the extraction")
+    for clause, why in flags:
+        print(f"   FLAG  \"{clause}\"\n         -> {why}")
+
     return {
         "file": path.name,
+        "summary": "n/a" if not ex.get("summary") else ("ok" if not flags else f"{len(flags)} flagged"),
         "caught": f"{caught}/{len(exp_items)}",
         "owners": f"{owners}/{len(exp_items)}",
         "deadlines": f"{deadlines}/{len(exp_items)}",
@@ -206,7 +278,7 @@ def main():
     rows = [score_file(f, key) for f in files]
 
     print("\n" + "=" * 78 + "\nSUMMARY\n" + "=" * 78)
-    headers = ["file", "caught", "owners", "deadlines", "invented", "traps"]
+    headers = ["file", "caught", "owners", "deadlines", "invented", "traps", "summary"]
     widths = [max(len(h), *(len(r[h]) for r in rows)) for h in headers]
     print("  ".join(h.ljust(w) for h, w in zip(headers, widths)))
     for r in rows:

@@ -1,13 +1,13 @@
 {
   "speaker_map": {
-    "SPEAKER_00": "Rahul",
     "SPEAKER_01": "Priya",
+    "SPEAKER_00": "Rahul",
     "SPEAKER_02": "Arjun",
     "SPEAKER_03": "Meera"
   },
   "decisions": [
     {
-      "decision": "Launch date is moved to November 10th.",
+      "decision": "Launch date is set to November 10th.",
       "source": {
         "quote": "Launch is now November 10th.",
         "speaker": "Priya",
@@ -23,7 +23,7 @@
       }
     },
     {
-      "decision": "Skip email campaign for version 1 and focus on app promotion first.",
+      "decision": "Email campaign will be skipped for version 1.",
       "source": {
         "quote": "let's skip email for version 1 we'll see how an app promotion does first",
         "speaker": "Priya",
@@ -33,7 +33,7 @@
   ],
   "action_items": [
     {
-      "task": "Implement fraud check to block self‑referrals",
+      "task": "Implement fraud check to block self-referrals",
       "owner": "Arjun",
       "deadline": "by November 5th",
       "source": {
@@ -53,21 +53,21 @@
       }
     },
     {
-      "task": "Design share screen mock‑ups",
+      "task": "Design share screen mock-ups",
       "owner": "Meera",
       "deadline": "by next wednesday",
       "source": {
-        "quote": "I can have mock -ups ready by next wednesday",
+        "quote": "perfect Mira design I'll need to design the share screen the one where users send their invite link I can have mock -ups ready by next wednesday",
         "speaker": "Meera",
         "time": 93.16
       }
     },
     {
-      "task": "Write the FAQ page",
+      "task": "Write FAQ page",
       "owner": "Priya",
       "deadline": "by november 7th",
       "source": {
-        "quote": "i'll write the faq page myself i'll have it done by november 7th",
+        "quote": "no mock -ups matter more forget it i'll write the faq page myself i'll have it done by november 7th",
         "speaker": "Priya",
         "time": 112.76
       }
@@ -99,65 +99,59 @@
     "Arjun"
   ],
   "summary": {
-    "overview": "The meeting locked the plan for the referral program launch, moving the launch date to November 10 and assigning the fraud‑check task to be completed by November 5. It also set the reward to a 200‑rupee app credit for both parties, assigned the FAQ write‑up to Priya, postponed the email campaign and invite‑link channel decision, and noted a review of app‑store screenshots.",
+    "overview": "The team finalized the referral-program launch plan, setting the launch for November 10, choosing a 200 rupee app-credit reward for both referrer and friend, and skipping the email campaign for version 1. They assigned the fraud-check implementation, share-screen mock-ups, and FAQ creation, while leaving the invite-link channel decision open for later.",
     "topics": [
       {
-        "title": "Launch date adjustment due to fraud check timing",
-        "discussed": "The team evaluated whether the November 3 launch was feasible, noting the lack of a fraud check, and decided to move the launch to November 10.",
+        "title": "Launch date and fraud check",
+        "discussed": "Arjun said November 3 launch was tight because the fraud check to block self-referrals was missing; he could finish the check by November 5, allowing a launch on November 10.",
         "options_considered": [
-          "keep November 3 launch",
-          "move launch to November 10"
+          "Launch on November 3",
+          "Launch on November 10"
         ],
-        "outcome_reasoning": "Launch moved to November 10 because the fraud check cannot be completed by November 3; Arjun can finish it by November 5, allowing a safe launch on the 10th.",
+        "outcome_reasoning": "The team agreed to move the launch to November 10 because the fraud check could be completed by November 5, making the later date safe.",
         "start": 16.32
       },
       {
-        "title": "Reward structure for referral program",
-        "discussed": "Reward options were considered; cash rewards were seen as a legal headache, and a 200‑rupee app credit for both referrer and referee was proposed and accepted.",
+        "title": "Reward type",
+        "discussed": "Rahul noted cash rewards pose legal issues and proposed 200 rupees in app credit for both the referrer and the friend; Priya accepted the proposal.",
         "options_considered": [
-          "cash rewards",
-          "200 rupees app credit for both parties"
+          "Cash rewards",
+          "200 rupees app credit for both"
         ],
-        "outcome_reasoning": "Decided on 200 rupee app credit for both sides because it avoids legal issues and was agreed by the team.",
-        "start": 65.48
+        "outcome_reasoning": "They decided on 200 rupees app credit for both parties because cash rewards were a legal headache.",
+        "start": 68.6
       },
       {
-        "title": "FAQ writing and share‑screen mock‑up responsibilities",
-        "discussed": "Meera offered to create share‑screen mock‑ups and also write the FAQ page, but Priya said mock‑ups were less important and she would write the FAQ herself by November 7.",
+        "title": "Share screen mock-ups and FAQ",
+        "discussed": "Meera offered to create share-screen mock-ups by next Wednesday and also take the FAQ page, but Priya said mock-ups mattered more and would write the FAQ herself, completing it by November 7.",
         "options_considered": [
-          "Meera creates both share screen mock‑ups and FAQ",
-          "Priya writes FAQ herself"
+          "Meera does both mock-ups and FAQ",
+          "Priya writes FAQ while Meera focuses on mock-ups"
         ],
-        "outcome_reasoning": "Priya will write the FAQ page herself by November 7; share‑screen mock‑ups were not prioritized.",
+        "outcome_reasoning": "Priya took the FAQ task so Meera could deliver the mock-ups on schedule.",
         "start": 93.16
       },
       {
-        "title": "Email campaign for version 1",
-        "discussed": "Rahul suggested an email campaign, but Priya proposed skipping email for version 1 to first test an app promotion.",
+        "title": "Email campaign",
+        "discussed": "Rahul had prepared an email campaign for existing users; Priya suggested skipping the email for version 1 and testing an app promotion first.",
         "options_considered": [
-          "run email campaign",
-          "skip email for version 1"
+          "Run email campaign",
+          "Skip email campaign for version 1"
         ],
-        "outcome_reasoning": "Email campaign was skipped for version 1 to focus on app promotion first.",
+        "outcome_reasoning": "The team chose to skip the email campaign for version 1 to focus on app promotion first.",
         "start": 120.94
       },
       {
-        "title": "Invite link channel selection",
-        "discussed": "The channel for sending invite links was debated; WhatsApp is easier, SMS works for everyone, and Rahul leaned toward WhatsApp but lacked data; decision was deferred.",
+        "title": "Invite link distribution channel",
+        "discussed": "Meera asked whether the invite link should be sent via WhatsApp or SMS; Arjun said WhatsApp is easier, SMS works for everyone; Rahul leaned toward WhatsApp but lacked data; Priya deferred the decision to next week after data is collected.",
         "options_considered": [
           "WhatsApp",
           "SMS"
         ],
-        "outcome_reasoning": "Decision on channel will be revisited next week after data is gathered; no choice made today.",
+        "outcome_reasoning": "No decision was made; the team will revisit the choice next week once data is available.",
         "start": 136.76
-      },
-      {
-        "title": "App store screenshot review",
-        "discussed": "The need to check if app store screenshots need updating was raised; Priya said someone should look at it.",
-        "options_considered": [],
-        "outcome_reasoning": "Will be looked at; no further reasoning given.",
-        "start": 157.98
       }
     ]
-  }
+  },
+  "summary_error": null
 }

@@ -7,6 +7,7 @@ The command-line entry point is scripts/extract.py.
 import json
 import os
 import re
+import time
 from pathlib import Path
 
 from huggingface_hub import InferenceClient
@@ -159,6 +160,36 @@ def _describe(error):
     return type(error).__name__ + (f" {status}" if status else "")
 
 
+RATE_LIMIT_RETRIES = 2
+RATE_LIMIT_DEFAULT_WAIT = 5  # seconds, when the provider does not say how long
+RATE_LIMIT_MAX_WAIT = 30  # a longer suggested wait is not worth holding a user for; fall back instead
+
+
+def _retry_wait(error):
+    """Seconds to wait before retrying a 429, or None if it is not a 429 or the wait is too long."""
+    response = getattr(error, "response", None)
+    if getattr(response, "status_code", None) != 429:
+        return None
+    try:
+        wait = float(response.headers.get("retry-after"))
+    except (AttributeError, TypeError, ValueError):
+        wait = RATE_LIMIT_DEFAULT_WAIT
+    return wait if wait <= RATE_LIMIT_MAX_WAIT else None
+
+
+def chat(client, **kwargs):
+    """chat_completion, waiting out a rate limit (429) up to RATE_LIMIT_RETRIES times."""
+    for attempt in range(RATE_LIMIT_RETRIES + 1):
+        try:
+            return client.chat_completion(**kwargs)
+        except Exception as e:
+            wait = _retry_wait(e)
+            if wait is None or attempt == RATE_LIMIT_RETRIES:
+                raise
+            print(f"  rate limited (429); waiting {wait:g}s, retry {attempt + 1} of {RATE_LIMIT_RETRIES}")
+            time.sleep(wait)
+
+
 def ask(client, model, messages, schema_model):
     """One chat call. Prefer strict JSON-schema output; fall back if the provider refuses it."""
     schema = {
@@ -166,15 +197,15 @@ def ask(client, model, messages, schema_model):
         "json_schema": {"name": "extraction", "schema": schema_model.model_json_schema(), "strict": True},
     }
     try:
-        resp = client.chat_completion(model=model, messages=messages, temperature=0, max_tokens=8000, response_format=schema)
+        resp = chat(client, model=model, messages=messages, temperature=0, max_tokens=8000, response_format=schema)
     except Exception as e:  # provider may not support structured output for this model
         print(f"  structured output rejected ({_describe(e)}); retrying with prompt only")
         try:
-            resp = client.chat_completion(model=model, messages=messages, temperature=0, max_tokens=8000)
+            resp = chat(client, model=model, messages=messages, temperature=0, max_tokens=8000)
         except Exception as e2:  # no credits, rate limit, outage, no network: nothing more to try
             print(f"  LLM call failed ({_describe(e2)})")
             raise LLMUnavailable() from e2
-    return resp.choices[0].message.content or ""
+    return (resp.choices[0].message.content or "").replace("\u2011", "-")  # models sometimes emit non-breaking hyphens
 
 
 def make_clients(token):
