@@ -99,31 +99,31 @@
     "Arjun"
   ],
   "summary": {
-    "overview": "The team finalized the referral-program launch plan, setting the launch for November 10, choosing a 200 rupee app-credit reward for both referrer and friend, and skipping the email campaign for version 1. They assigned the fraud-check implementation, share-screen mock-ups, and FAQ creation, while leaving the invite-link channel decision open for later.",
+    "overview": "The team finalized the referral-program launch plan, setting the launch for November 10, choosing a 200 rupee app-credit reward for both referrer and friend, and skipping the email campaign for version 1. They assigned the fraud-check implementation, share-screen mock-ups, and FAQ creation, while leaving the invite-link channel decision open for later.",
     "topics": [
       {
         "title": "Launch date and fraud check",
-        "discussed": "Arjun said November 3 launch was tight because the fraud check to block self-referrals was missing; he could finish the check by November 5, allowing a launch on November 10.",
+        "discussed": "Arjun said November 3 launch was tight because the fraud check to block self-referrals was missing; he could finish the check by November 5, allowing a launch on November 10.",
         "options_considered": [
-          "Launch on November 3",
-          "Launch on November 10"
+          "Launch on November 3",
+          "Launch on November 10"
         ],
-        "outcome_reasoning": "The team agreed to move the launch to November 10 because the fraud check could be completed by November 5, making the later date safe.",
+        "outcome_reasoning": "The team agreed to move the launch to November 10 because the fraud check could be completed by November 5, making the later date safe.",
         "start": 16.32
       },
       {
         "title": "Reward type",
-        "discussed": "Rahul noted cash rewards pose legal issues and proposed 200 rupees in app credit for both the referrer and the friend; Priya accepted the proposal.",
+        "discussed": "Rahul noted cash rewards pose legal issues and proposed 200 rupees in app credit for both the referrer and the friend; Priya accepted the proposal.",
         "options_considered": [
           "Cash rewards",
-          "200 rupees app credit for both"
+          "200 rupees app credit for both"
         ],
-        "outcome_reasoning": "They decided on 200 rupees app credit for both parties because cash rewards were a legal headache.",
+        "outcome_reasoning": "They decided on 200 rupees app credit for both parties because cash rewards were a legal headache.",
         "start": 68.6
       },
       {
         "title": "Share screen mock-ups and FAQ",
-        "discussed": "Meera offered to create share-screen mock-ups by next Wednesday and also take the FAQ page, but Priya said mock-ups mattered more and would write the FAQ herself, completing it by November 7.",
+        "discussed": "Meera offered to create share-screen mock-ups by next Wednesday and also take the FAQ page, but Priya said mock-ups mattered more and would write the FAQ herself, completing it by November 7.",
         "options_considered": [
           "Meera does both mock-ups and FAQ",
           "Priya writes FAQ while Meera focuses on mock-ups"
@@ -133,12 +133,12 @@
       },
       {
         "title": "Email campaign",
-        "discussed": "Rahul had prepared an email campaign for existing users; Priya suggested skipping the email for version 1 and testing an app promotion first.",
+        "discussed": "Rahul had prepared an email campaign for existing users; Priya suggested skipping the email for version 1 and testing an app promotion first.",
         "options_considered": [
           "Run email campaign",
-          "Skip email campaign for version 1"
+          "Skip email campaign for version 1"
         ],
-        "outcome_reasoning": "The team chose to skip the email campaign for version 1 to focus on app promotion first.",
+        "outcome_reasoning": "The team chose to skip the email campaign for version 1 to focus on app promotion first.",
         "start": 120.94
       },
       {

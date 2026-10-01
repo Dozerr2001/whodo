@@ -55,13 +55,13 @@ def test_summary_call_gets_the_extraction_as_facts():
     assert "source of truth" in summarize.INSTRUCTIONS
 
 
-def test_non_breaking_hyphens_are_replaced():
+def test_non_breaking_hyphens_and_narrow_spaces_are_replaced():
     class C:
         def chat_completion(self, **kw):
-            m = type("M", (), {"content": "fraud‑check"})()
+            m = type("M", (), {"content": "fraud\u2011check on November\u202f3"})()
             return type("R", (), {"choices": [type("Ch", (), {"message": m})()]})()
 
-    assert extract.ask(C(), "m", [], extract.Extraction) == "fraud-check"
+    assert extract.ask(C(), "m", [], extract.Extraction) == "fraud-check on November 3"
 
 
 def test_quotes_stay_only_around_exact_transcript_words():

@@ -205,7 +205,7 @@ def ask(client, model, messages, schema_model):
         except Exception as e2:  # no credits, rate limit, outage, no network: nothing more to try
             print(f"  LLM call failed ({_describe(e2)})")
             raise LLMUnavailable() from e2
-    return (resp.choices[0].message.content or "").replace("\u2011", "-")  # models sometimes emit non-breaking hyphens
+    return (resp.choices[0].message.content or "").replace("\u2011", "-").replace("\u202f", " ")  # models sometimes emit non-breaking hyphens and narrow no-break spaces
 
 
 def make_clients(token):
