@@ -265,9 +265,23 @@ def groq_settings(model):
     return None if effort == "default" or "gpt-oss" not in model else {"reasoning_effort": effort}
 
 
+CHARS_PER_TOKEN = 3.85  # measured on a real request: 22,061 characters were 5,727 tokens
+GROQ_OUTPUT_ALLOWANCE = 4000  # Groq's 413 on a 5,727-token prompt said "Requested 9724": the prompt plus about 4,000 for the answer
+
+
+def estimated_request_tokens(messages):
+    """What Groq will count for this request: the prompt (estimated from its length) plus room for the answer."""
+    return round(sum(len(m["content"]) for m in messages) / CHARS_PER_TOKEN) + GROQ_OUTPUT_ALLOWANCE
+
+
 def ask_any(clients, model, messages, schema_model):
-    """Try each provider in order; LLMUnavailable only when every one of them failed."""
+    """Try each provider in order; LLMUnavailable only when every one of them failed.
+    Groq is skipped when the request would be over its per-request limit: a 413 cannot succeed, and trying costs a wait."""
     for i, (name, client) in enumerate(clients):
+        if name == "Groq" and i + 1 < len(clients) and estimated_request_tokens(messages) > config.GROQ_TOKEN_LIMIT:
+            print(f"  Groq skipped: about {estimated_request_tokens(messages)} tokens, over its {config.GROQ_TOKEN_LIMIT} limit; "
+                  f"using {clients[i + 1][0]}")
+            continue
         try:
             return ask(client, model, messages, schema_model, groq_settings(model) if name == "Groq" else None)
         except LLMUnavailable:

@@ -35,6 +35,17 @@ DEV_LLM = "" if ON_SPACES else os.environ.get("WHODO_DEV_LLM", "").strip().lower
 if DEV_LLM not in ("", "saved", "outage", "summary-outage"):
     raise SystemExit(f"WHODO_DEV_LLM must be saved, outage or summary-outage, not {DEV_LLM!r}")
 
+# The most tokens one Groq request may use. 8,000 is the free tier's per-minute limit for gpt-oss-120b; a single request
+# over it is refused with a 413 and waiting never helps. Set a higher number if your Groq plan allows it.
+def _int(value, default):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+GROQ_TOKEN_LIMIT = _int(os.environ.get("WHODO_GROQ_TOKEN_LIMIT"), 8000)
+
 # How hard gpt-oss thinks on Groq before answering: "low", "medium", "high", or "default" to leave it to Groq.
 # The hidden thinking counts as output tokens, and on the free tier (8,000 tokens a minute) it was most of each call.
 # Off ("default") because "low" made meeting_01 results worse in all 3 runs: a missed decision, a failed trap,

@@ -181,6 +181,40 @@ def test_reasoning_effort_is_off_by_default_and_only_for_gpt_oss():
         config.GROQ_REASONING_EFFORT = original
 
 
+def _messages(chars):
+    return [{"role": "system", "content": "x" * 1000}, {"role": "user", "content": "y" * (chars - 1000)}]
+
+
+def test_a_request_over_groqs_limit_goes_straight_to_hf():
+    big = _messages(22061)  # the real 19-minute meeting: Groq refused it with 413 "Requested 9724"
+    assert 9700 < extract.estimated_request_tokens(big) < 9760
+    groq, hf = FakeClient(fail=0), FakeClient(fail=0)
+    sleeps = _sleeps_during(lambda: extract.ask_any([("Groq", groq), ("Hugging Face", hf)], "m", big, extract.Extraction))
+    assert groq.calls == 0 and hf.calls == 1 and sleeps == []  # Groq never called, nothing waited
+
+    small = _messages(14501)  # the first 10 minutes of it: completed on Groq (about 7,770 estimated)
+    assert extract.estimated_request_tokens(small) <= config.GROQ_TOKEN_LIMIT
+    groq, hf = FakeClient(fail=0), FakeClient(fail=0)
+    extract.ask_any([("Groq", groq), ("Hugging Face", hf)], "m", small, extract.Extraction)
+    assert groq.calls == 1 and hf.calls == 0
+
+
+def test_groq_limit_can_be_raised_and_a_lone_groq_is_still_tried():
+    original = config.GROQ_TOKEN_LIMIT
+    try:
+        big = _messages(22061)
+        config.GROQ_TOKEN_LIMIT = 20000  # e.g. a paid plan
+        groq, hf = FakeClient(fail=0), FakeClient(fail=0)
+        extract.ask_any([("Groq", groq), ("Hugging Face", hf)], "m", big, extract.Extraction)
+        assert groq.calls == 1 and hf.calls == 0
+        config.GROQ_TOKEN_LIMIT = 8000
+        only = FakeClient(fail=0)  # with no fallback there is nothing to skip to
+        extract.ask_any([("Groq", only)], "m", big, extract.Extraction)
+        assert only.calls == 1
+    finally:
+        config.GROQ_TOKEN_LIMIT = original
+
+
 def test_fallback_without_schema_still_works():
     client = FakeClient(fail=1)
     assert extract.ask(client, "m", [], extract.Extraction) == "{}" and client.calls == 2
