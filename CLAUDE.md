@@ -18,7 +18,7 @@ Pipeline: Audio → Whisper + pyannote → labeled transcript → LLM → action
 - `scripts/` command-line wrappers around `whodo/` (transcribe.py, extract.py), plus score.py, eval_diarization.py and generate_meeting.py (makes synthetic test audio with Kokoro TTS)
 - `tests/` plain-assert checks for dates and quotes: `.venv/bin/python tests/test_dates.py`; `tests/test_stop.py` stops a real run at each stage (slow, uses real models and the LLM)
 - `test_data/` meeting scripts, generated audio (`meeting_01.mp3` is the small copy the app plays and is committed; `*.wav` is gitignored), speaker timelines, and answer keys
-- `app/app.py` the Gradio app. Run with `.venv/bin/python app/app.py`. On a Space (`SPACE_ID` set) it caps audio at 10 minutes and shows cached sample results; override with `WHODO_MAX_AUDIO_MINUTES` and `WHODO_SAMPLE_MODE=live|cached`.
+- `app/app.py` the Gradio app. Run with `.venv/bin/python app/app.py`. On a Space (`SPACE_ID` set) it caps audio at 8 minutes and shows cached sample results; override with `WHODO_MAX_AUDIO_MINUTES` and `WHODO_SAMPLE_MODE=live|cached`.
 - `logs/timings.jsonl` (gitignored) real per-step run times, used to check the wait estimates in `config.py`
 
 ## Environment notes

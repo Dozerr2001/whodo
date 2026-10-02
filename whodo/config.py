@@ -20,8 +20,9 @@ def _minutes(value, default):
     return minutes if minutes > 0 else None
 
 
-# Longest recording the app accepts, in minutes. None = no limit (local); 10 on a Space.
-MAX_AUDIO_MINUTES = _minutes(os.environ.get("WHODO_MAX_AUDIO_MINUTES"), 10 if ON_SPACES else None)
+# Longest recording the app accepts, in minutes. None = no limit (local); 8 on a Space, a buffer under the
+# roughly 10 minutes that fit in one Groq free-tier request (see GROQ_TOKEN_LIMIT).
+MAX_AUDIO_MINUTES = _minutes(os.environ.get("WHODO_MAX_AUDIO_MINUTES"), 8 if ON_SPACES else None)
 
 # "live" runs the real pipeline on the sample recording; "cached" shows saved results.
 SAMPLE_MODE = os.environ.get("WHODO_SAMPLE_MODE", "cached" if ON_SPACES else "live")
