@@ -35,6 +35,14 @@ DEV_LLM = "" if ON_SPACES else os.environ.get("WHODO_DEV_LLM", "").strip().lower
 if DEV_LLM not in ("", "saved", "outage", "summary-outage"):
     raise SystemExit(f"WHODO_DEV_LLM must be saved, outage or summary-outage, not {DEV_LLM!r}")
 
+# How hard gpt-oss thinks on Groq before answering: "low", "medium", "high", or "default" to leave it to Groq.
+# The hidden thinking counts as output tokens, and on the free tier (8,000 tokens a minute) it was most of each call.
+# Off ("default") because "low" made meeting_01 results worse in all 3 runs: a missed decision, a failed trap,
+# owners at 3/5, and summaries that contradict the extraction. See CLAUDE.md.
+GROQ_REASONING_EFFORT = os.environ.get("WHODO_GROQ_REASONING_EFFORT", "default").strip().lower()
+if GROQ_REASONING_EFFORT not in ("low", "medium", "high", "default"):
+    raise SystemExit(f"WHODO_GROQ_REASONING_EFFORT must be low, medium, high or default, not {GROQ_REASONING_EFFORT!r}")
+
 # Seconds of processing per second of audio, plus a fixed cost for the LLM call and model loading.
 # "mps" is measured (Mac, 3-minute sample: Whisper 72s, pyannote 18s, LLM 2s). "cuda" and "cpu" are
 # unmeasured guesses. Every run appends its real timings to logs/timings.jsonl so these can be corrected.

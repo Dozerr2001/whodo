@@ -170,6 +170,17 @@ def test_log_line_has_the_limit_message_for_413_and_429_only():
     assert len(extract._describe(GroqLimit(message="x" * 1000))) < 340  # a long message is cut
 
 
+def test_reasoning_effort_is_off_by_default_and_only_for_gpt_oss():
+    original = config.GROQ_REASONING_EFFORT
+    try:
+        assert original == "default" and extract.groq_settings("openai/gpt-oss-120b") is None
+        config.GROQ_REASONING_EFFORT = "low"
+        assert extract.groq_settings("openai/gpt-oss-120b") == {"reasoning_effort": "low"}
+        assert extract.groq_settings("Qwen/Qwen3-235B-A22B-Instruct-2507") is None  # other models do not take it
+    finally:
+        config.GROQ_REASONING_EFFORT = original
+
+
 def test_fallback_without_schema_still_works():
     client = FakeClient(fail=1)
     assert extract.ask(client, "m", [], extract.Extraction) == "{}" and client.calls == 2

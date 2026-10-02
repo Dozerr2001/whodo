@@ -13,6 +13,7 @@ from pathlib import Path
 from huggingface_hub import InferenceClient
 from pydantic import BaseModel, ConfigDict, ValidationError
 
+from . import config
 from .quotes import find_source
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -228,18 +229,19 @@ def chat(client, **kwargs):
             time.sleep(wait)
 
 
-def ask(client, model, messages, schema_model):
-    """One chat call. Prefer strict JSON-schema output; fall back if the provider refuses it."""
+def ask(client, model, messages, schema_model, extra_body=None):
+    """One chat call. Prefer strict JSON-schema output; fall back if the provider refuses it.
+    extra_body is for provider-specific settings."""
     schema = {
         "type": "json_schema",
         "json_schema": {"name": "extraction", "schema": schema_model.model_json_schema(), "strict": True},
     }
     try:
-        resp = chat(client, model=model, messages=messages, temperature=0, max_tokens=8000, response_format=schema)
+        resp = chat(client, model=model, messages=messages, temperature=0, max_tokens=8000, response_format=schema, extra_body=extra_body)
     except Exception as e:  # provider may not support structured output for this model
         print(f"  structured output rejected ({_describe(e)}); retrying with prompt only")
         try:
-            resp = chat(client, model=model, messages=messages, temperature=0, max_tokens=8000)
+            resp = chat(client, model=model, messages=messages, temperature=0, max_tokens=8000, extra_body=extra_body)
         except Exception as e2:  # no credits, rate limit, outage, no network: nothing more to try
             print(f"  LLM call failed ({_describe(e2)})")
             raise LLMUnavailable() from e2
@@ -256,11 +258,18 @@ def make_clients(token):
     return clients
 
 
+def groq_settings(model):
+    """Extra request settings for Groq: less hidden thinking, which would otherwise eat the per-minute token budget.
+    Only gpt-oss models take this setting."""
+    effort = config.GROQ_REASONING_EFFORT
+    return None if effort == "default" or "gpt-oss" not in model else {"reasoning_effort": effort}
+
+
 def ask_any(clients, model, messages, schema_model):
     """Try each provider in order; LLMUnavailable only when every one of them failed."""
     for i, (name, client) in enumerate(clients):
         try:
-            return ask(client, model, messages, schema_model)
+            return ask(client, model, messages, schema_model, groq_settings(model) if name == "Groq" else None)
         except LLMUnavailable:
             if i + 1 < len(clients):
                 print(f"  {name} failed; falling back to {clients[i + 1][0]}")
