@@ -49,6 +49,7 @@ COPY_JS = """async (text) => {
 }"""
 RESET_COPY_JS = "async () => { await new Promise(r => setTimeout(r, 1500)); return 'Copy summary'; }"
 INPUT_CSS = """
+.mm-hidden { display: none !important; }
 .mm-col { max-width: 720px; width: 100%; margin: 0 auto; gap: 12px; }
 .mm-small, .mm-small p { font-size: var(--text-sm); color: var(--body-text-color-subdued); }
 .mm-link { background: none; border: none; box-shadow: none; text-decoration: underline; color: var(--link-text-color); padding: 0; width: fit-content; align-self: flex-start; min-width: 0; }
@@ -349,7 +350,9 @@ with gr.Blocks(title="WhoDo", delete_cache=(3600, 3600)) as demo:
             gr.Markdown(PRIVACY, elem_classes="mm-small")
 
     with gr.Column(visible=False, elem_classes="mm-col") as results:  # shown once a run finishes
-        summary_plain = gr.Textbox(visible="hidden")  # holds the plain-text summary for the copy button
+        # Holds the plain-text summary for the copy button. Hidden with CSS: visible="hidden" still showed it.
+        # display:none leaves its value in the page, which is all the button reads.
+        summary_plain = gr.Textbox(elem_classes="mm-hidden")
         with gr.Row():
             gr.Markdown("### Summary")
             copy_btn = gr.Button("Copy summary", size="sm", variant="secondary", scale=0, min_width=150)
