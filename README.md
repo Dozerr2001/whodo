@@ -2,6 +2,15 @@
 
 **Turn a meeting recording into who does what, by when.**
 
+![Results](docs/results.png)
+*Results: action items with owner, calendar-date deadline and a supporting quote, then decisions.*
+
+![Summary](docs/summary.png)
+*Summary: an overview, then key discussion points with timestamps, options considered and outcomes.*
+
+![Unassigned items](docs/unassigned.png)
+*Unassigned items are flagged instead of given an owner, followed by open questions and the CSV download.*
+
 Upload a meeting recording, get back a summary, the decisions made, the action items with owners and deadlines, and the questions still left open.
 
 ## The problem
@@ -88,6 +97,7 @@ WhoDo/
 ├── scripts/              command-line wrappers, scoring, and the test-audio generator
 ├── tests/                plain-assert checks (dates, quotes, rendering, LLM errors, Stop)
 ├── test_data/            meeting scripts, audio, speaker timelines, answer keys, saved results
+├── docs/                 README screenshots
 ├── requirements.txt
 ├── LICENSE
 ├── .gitignore
@@ -181,5 +191,5 @@ The answer key lists exactly what the app should and should not return.
 - [x] Meeting summary
 - [x] Scoring against the answer key
 - [x] App interface (Gradio)
-- [ ] Deploy to Hugging Face Spaces
+- WhoDo currently runs locally.
 - [ ] Split long transcripts into chunks
